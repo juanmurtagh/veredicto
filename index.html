@@ -190,9 +190,21 @@ header.top h1{font-size:34px;line-height:1}
 .item .pend{width:28px;height:28px;border-radius:50%;border:1.5px dashed var(--off);justify-self:center}
 .asp{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:10px;padding:6px 0;border-bottom:1px solid var(--line)}
 .asp:last-child{border-bottom:0}
-.asp .ctrl{display:flex;align-items:center;gap:8px}
+.asp .ctrl{display:flex;align-items:center;gap:6px}
 .asp .val{min-width:40px;text-align:center;font-family:var(--display);font-size:22px}
-.paso.chico{width:36px;height:36px;font-size:20px}
+.paso.chico{width:32px;height:32px;font-size:18px}
+/* Estrellas */
+.estrellas{display:inline-flex;gap:5px;vertical-align:middle}
+.est{position:relative;width:40px;height:40px;display:block}
+.est svg{position:absolute;inset:0;width:100%;height:100%}
+.est-vacia{fill:var(--soft);stroke:var(--off);stroke-width:1}
+.est-llena{position:absolute;inset:0;overflow:hidden;transition:width .12s}
+.est-llena svg{width:40px;height:40px}
+.est-llena path{fill:var(--accent)}
+.estrellas.chicas{gap:2px}
+.estrellas.chicas .est,.estrellas.chicas .est-llena svg{width:20px;height:20px}
+.nota{gap:12px}
+.nota .paso{width:40px;height:40px;font-size:22px}
 .asp-otros{font-size:12px;color:var(--muted)}
 .editor-asp{display:flex;gap:8px;align-items:center}
 .editor-asp input{flex:1;min-width:0}
@@ -213,7 +225,7 @@ header.top h1{font-size:34px;line-height:1}
 
 <!-- ============ PANTALLA DE INGRESO ============ -->
 <form id="login" class="portada" hidden novalidate>
-  <div class="marca"><img src="logo.png" alt="Logo de Veredicto" class="sello"><h1>Veredicto</h1><p>Cafés, cenas y películas, puntuados en grupo.</p></div>
+  <div class="marca"><img src="logo.png" alt="Logo de Veredicto" class="sello"><h1>Veredicto</h1><p>Probalo, puntualo, recordalo.</p></div>
   <div class="campo"><label for="lEmail">Email</label><input type="email" id="lEmail" autocomplete="email" placeholder="tu@email.com"></div>
   <div class="campo"><label for="lPass">Contraseña</label>
     <div class="pass"><input type="password" id="lPass" autocomplete="current-password"><button type="button" class="ver" id="lVer">Mostrar</button></div>
@@ -590,8 +602,8 @@ function abrirHoja(itemId, opciones = {}){
   H.aspectos = cat.aspectos;
   H.archivo = null; H.quitarFoto = false; H.fotoActual = x?.foto || null;
   H.pendiente = opciones.yaFuimos ? false : (x ? x.pendiente : S.vista === 'pend');
-  H.nota = mia?.puntaje ?? 8;
-  H.asp = {}; H.aspectos.forEach(a => H.asp[a] = mia?.aspectos?.[a] ?? mia?.puntaje ?? 8);
+  H.nota = Math.round(mia?.puntaje ?? 8);
+  H.asp = {}; H.aspectos.forEach(a => H.asp[a] = Math.round(mia?.aspectos?.[a] ?? mia?.puntaje ?? 8));
   const sinNota = x && !x.pendiente && mia?.puntaje == null;
   const otrasNotas = n ? n.notas.slice(1) : [];
   $('#velo').innerHTML = `<form class="hoja" data-f="item" data-id="${x ? x.id : ''}" role="dialog" aria-modal="true" aria-labelledby="hTit" novalidate>
@@ -650,21 +662,33 @@ async function achicar(archivo){
 }
 function botonHoja(x){ return H.pendiente ? (x ? 'Guardar' : 'Agregar a pendientes') : (x && !x.pendiente ? 'Guardar' : 'Dictar veredicto'); }
 // Con aspectos: un − y + por aspecto, y la nota general es el promedio. Sin aspectos: una sola nota.
+// 5 estrellas: cada media estrella es 1 punto (una nota de 7 son 3 estrellas y media)
+const PUNTA = 'M12 2.5l2.9 6 6.6.8-4.9 4.6 1.3 6.5L12 17.2 6.1 20.4l1.3-6.5L2.5 9.3l6.6-.8z';
+function estrellas(n, chicas){
+  let h = '';
+  for (let i = 0; i < 5; i++){
+    const lleno = Math.max(0, Math.min(1, n / 2 - i));   // 0 = vacía, 0.5 = media, 1 = llena
+    h += `<span class="est"><svg viewBox="0 0 24 24"><path d="${PUNTA}" class="est-vacia"/></svg>
+      <span class="est-llena" style="width:${lleno * 100}%"><svg viewBox="0 0 24 24"><path d="${PUNTA}"/></svg></span></span>`;
+  }
+  return `<span class="estrellas${chicas ? ' chicas' : ''}" role="img" aria-label="${n} de 10">${h}</span>`;
+}
+// Sin aspectos: estrellas con − y +, y la barra. Con aspectos: estrellas por aspecto, y la general es el promedio.
 function controlesNota(){
   if (!H.aspectos.length) return `<div class="nota">
-      <button type="button" class="paso" data-paso="-0.5" aria-label="Bajar medio punto">−</button>
-      <span class="tarjeta"><b class="num" id="notaNum">${nota(H.nota)}</b><small>${esc(inicial(yo().nombre))}</small></span>
-      <button type="button" class="paso" data-paso="0.5" aria-label="Subir medio punto">+</button></div>
-    <input type="range" class="rango" id="fNota" min="1" max="10" step="0.5" value="${H.nota}" aria-label="Tu nota del 1 al 10">`;
-  return `<div class="nota" style="padding-bottom:0"><span class="tarjeta"><b class="num" id="notaNum">${nota(notaGeneral())}</b><small>${esc(inicial(yo().nombre))}</small></span></div>
+      <button type="button" class="paso" data-paso="-1" aria-label="Bajar un punto">−</button>
+      <span id="notaEst">${estrellas(H.nota)}</span>
+      <button type="button" class="paso" data-paso="1" aria-label="Subir un punto">+</button></div>
+    <input type="range" class="rango" id="fNota" min="1" max="10" step="1" value="${H.nota}" aria-label="Tu nota del 1 al 10">`;
+  return `<div class="nota" style="padding-bottom:0"><span id="notaEst">${estrellas(notaGeneral())}</span></div>
     <p class="vacio" style="font-size:13px;padding:0 0 4px">Tu nota general es el promedio de los aspectos.</p>
     ${H.aspectos.map((a, i) => `<div class="asp"><span>${esc(a)}</span><span class="ctrl">
-      <button type="button" class="paso chico" data-paso="-0.5" data-asp="${i}" aria-label="Bajar ${esc(a)}">−</button>
-      <span class="val num" id="asp${i}">${nota(H.asp[a])}</span>
-      <button type="button" class="paso chico" data-paso="0.5" data-asp="${i}" aria-label="Subir ${esc(a)}">+</button></span></div>`).join('')}`;
+      <button type="button" class="paso chico" data-paso="-1" data-asp="${i}" aria-label="Bajar ${esc(a)}">−</button>
+      <span id="asp${i}">${estrellas(H.asp[a], true)}</span>
+      <button type="button" class="paso chico" data-paso="1" data-asp="${i}" aria-label="Subir ${esc(a)}">+</button></span></div>`).join('')}`;
 }
-function notaGeneral(){ const vs = H.aspectos.map(a => H.asp[a]); return medio(vs.reduce((s,v)=>s+v,0) / vs.length); }
-function conectarRango(){ const r = $('#fNota'); if (r) r.oninput = () => { H.nota = Number(r.value); $('#notaNum').textContent = nota(H.nota); }; }
+function notaGeneral(){ const vs = H.aspectos.map(a => H.asp[a]); return Math.round(vs.reduce((s,v)=>s+v,0) / vs.length); }
+function conectarRango(){ const r = $('#fNota'); if (r) r.oninput = () => { H.nota = Number(r.value); $('#notaEst').innerHTML = estrellas(H.nota); }; }
 function cerrarHoja(){ $('#velo').hidden = true; $('#velo').innerHTML = ''; }
 
 async function guardarItem(form){
@@ -796,8 +820,8 @@ document.addEventListener('click', async e => {
   const paso = e.target.closest('[data-paso]');
   if (paso){
     const d = Number(paso.dataset.paso), lim = v => Math.min(10, Math.max(1, v));
-    if (paso.dataset.asp != null){ const a = H.aspectos[Number(paso.dataset.asp)]; H.asp[a] = lim(H.asp[a] + d); $('#asp' + paso.dataset.asp).textContent = nota(H.asp[a]); $('#notaNum').textContent = nota(notaGeneral()); }
-    else { H.nota = lim(H.nota + d); $('#fNota').value = H.nota; $('#notaNum').textContent = nota(H.nota); }
+    if (paso.dataset.asp != null){ const a = H.aspectos[Number(paso.dataset.asp)]; H.asp[a] = lim(H.asp[a] + d); $('#asp' + paso.dataset.asp).innerHTML = estrellas(H.asp[a], true); $('#notaEst').innerHTML = estrellas(notaGeneral()); }
+    else { H.nota = lim(H.nota + d); $('#fNota').value = H.nota; $('#notaEst').innerHTML = estrellas(H.nota); }
     return;
   }
   // "Ya fuimos" / "Queremos ir" dentro de la ventana
