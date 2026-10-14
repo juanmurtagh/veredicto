@@ -211,6 +211,20 @@ header.top h1{font-size:34px;line-height:1}
 .quitar{width:36px;height:36px;border-radius:10px;border:1px solid var(--line);background:var(--bg);font-size:18px;line-height:1;color:var(--muted);flex:none}
 .notas-de{display:flex;flex-direction:column;gap:8px}
 
+/* ============ NOTAS OCULTAS Y VEREDICTO DEL GRUPO ============ */
+.tarjeta.oculta{background:var(--soft);color:var(--muted);border:1.5px solid var(--off)}
+.tarjeta.oculta svg{margin-bottom:2px}
+.item .sub.oculto{color:var(--accent)}
+.sellado{display:flex;align-items:center;gap:10px;background:var(--soft);border-radius:12px;padding:12px 14px;font-size:14px;color:var(--ink)}
+.sellado svg{flex:none;color:var(--accent);width:20px;height:20px}
+.grupo-veredicto{display:flex;flex-direction:column;gap:10px;border:1px solid var(--line);border-radius:14px;padding:14px;background:var(--bg)}
+.gv-cab{display:flex;justify-content:space-between;align-items:flex-end;gap:12px}
+.gv-nota{font-family:var(--display);font-size:44px;line-height:1;color:var(--accent);margin-right:8px}
+.gv-de{font-size:13px;color:var(--muted)}
+.gv-coinc{text-align:right;display:flex;flex-direction:column}
+.gv-coinc b{font-family:var(--display);font-weight:400;font-size:24px;line-height:1.1}
+.gv-coinc span{font-size:13px;color:var(--muted)}
+
 /* ============ FOTOS ============ */
 .mini{width:44px;height:44px;border-radius:10px;object-fit:cover;flex:none;background:var(--soft)}
 .fila-nom{display:flex;align-items:center;gap:10px;min-width:0}
@@ -293,6 +307,7 @@ const S = {
   catSel: null,      // categoría que estás mirando
   vista: 'rank',     // 'rank' (ranking), 'pend' (pendientes) o 'desac' (desacuerdos)
   confirma: null,    // qué está pidiendo confirmación
+  votos: {},        // cuántos votaron cada veredicto: { itemId: 3 }
   fotos: {},        // dirección temporal para ver cada foto: { 'grupo/foto.jpg': 'https://...' }
   listo: false
 };
@@ -354,6 +369,9 @@ const db = {
     S.cats = c.data.map(x => ({...x, aspectos: Array.isArray(x.aspectos) ? x.aspectos : []}));
     S.items = i.data;
     S.puntajes = p.data.map(x => ({...x, puntaje:Number(x.puntaje), aspectos:x.aspectos || {}}));
+    // Cuántos votaron cada veredicto (las notas de los demás solo se ven si ya votaste)
+    const v = await sb.rpc('votos_por_item', { e: gid });
+    S.votos = v.error ? {} : Object.fromEntries((v.data || []).map(r => [r.item_id, Number(r.votos)]));
     if (!S.cats.some(x => x.id === S.catSel)) { S.catSel = S.cats[0]?.id || null; }
     await this.cargarFotos();
     S.listo = true;
@@ -404,7 +422,7 @@ const db = {
     const { error } = await sb.from('items').upsert({...fila, espacio_id:S.grupoSel}); if (error) throw error;
     const i = S.items.findIndex(x => x.id === fila.id);
     if (i >= 0) S.items[i] = {...S.items[i], ...fila}; else S.items.push({...fila, creado:new Date().toISOString()});
-    if (miNota !== undefined) await this.guardarNota(fila.id, miNota);
+    if (miNota !== undefined){ await this.guardarNota(fila.id, miNota); await this.refrescarNotas(fila.id, miNota); }
     render();
   },
   // miNota: null (sin nota) o { puntaje, aspectos }
@@ -418,6 +436,13 @@ const db = {
     const fila = { item_id:itemId, user_id:S.yo, puntaje:miNota.puntaje, aspectos:miNota.aspectos || {}, actualizado:new Date().toISOString() };
     const { error } = await sb.from('puntajes').upsert(fila); if (error) throw error;
     if (antes) Object.assign(antes, fila); else S.puntajes.push(fila);
+  },
+  // Después de votar, pedimos de nuevo las notas: ahora la base de datos te deja ver las de los demás
+  async refrescarNotas(itemId, miNota){
+    const { data, error } = await sb.from('puntajes').select('item_id,user_id,puntaje,aspectos').eq('item_id', itemId);
+    if (error) throw error;
+    S.puntajes = S.puntajes.filter(p => p.item_id !== itemId).concat(data.map(x => ({...x, puntaje:Number(x.puntaje), aspectos:x.aspectos || {}})));
+    if (miNota) S.votos[itemId] = data.length;
   },
   async borrarItem(id){
     const foto = S.items.find(x => x.id === id)?.foto;
@@ -446,7 +471,10 @@ function notasDe(itemId){
   const hay = notas.filter(n => n.puntaje != null).map(n => n.puntaje);
   const prom = hay.length ? hay.reduce((a,b)=>a+b,0) / hay.length : null;
   const rango = hay.length >= 2 ? Math.max(...hay) - Math.min(...hay) : 0;   // qué tan repartidas están las notas
-  return { notas, prom, votos: hay.length, rango, mia: notas[0].puntaje };
+  const mia = notas[0].puntaje;
+  const oculto = mia == null && S.miembros.length > 1;          // no votaste: no ves las notas de los demás
+  const coinc = hay.length >= 2 ? Math.round(100 - rango / 9 * 100) : null;   // 100% = todos pusieron lo mismo
+  return { notas, prom, votos: hay.length, votosTotales: S.votos[itemId] ?? hay.length, rango, mia, oculto, coinc };
 }
 function ranking(catId){
   return S.items.filter(x => x.categoria_id === catId && !x.pendiente).map(x => ({...x, ...notasDe(x.id)}))
@@ -454,6 +482,7 @@ function ranking(catId){
 }
 const pendientes = catId => S.items.filter(x => x.categoria_id === catId && x.pendiente).sort((a,b) => (b.creado||'').localeCompare(a.creado||''));
 // Ítems puntuados por al menos dos personas (para comparar)
+function fraseCoinc(c){ return c >= 90 ? 'Coinciden casi en todo' : c >= 75 ? 'Coinciden bastante' : c >= 55 ? 'Opiniones divididas' : 'No coinciden para nada'; }
 function comparables(){ return S.items.filter(x => !x.pendiente).map(x => ({...x, ...notasDe(x.id)})).filter(x => x.votos >= 2); }
 // En pareja: qué tanto coinciden (100% = notas idénticas)
 function coincidencia(){
@@ -472,17 +501,20 @@ function jueces(){
 /* =====================================================================
    6. DIBUJAR LA PÁGINA
    ===================================================================== */
+const CANDADO = '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>';
+function tarjetaOculta(quien){ return `<span class="tarjeta oculta" aria-label="${esc(quien)}: nota oculta hasta que votes">${CANDADO}<small>${esc(inicial(quien))}</small></span>`; }
 function tarjeta(n, quien){
   if (n == null) return `<span class="tarjeta falta" aria-label="${esc(quien)}: sin nota"><b>?</b><small>${esc(inicial(quien))}</small></span>`;
   return `<span class="tarjeta${n < 5 ? ' baja' : ''}" aria-label="${esc(quien)}: ${nota(n)}"><b class="num">${nota(n)}</b><small>${esc(inicial(quien))}</small></span>`;
 }
 // En grupos de hasta 4 se ven las tarjetas de cada uno; en grupos más grandes, el promedio
 function notasFila(x){
-  if (S.miembros.length <= 4) return `<span class="tarjetas">${x.notas.map(n => tarjeta(n.puntaje, n.nombre)).join('')}</span>`;
+  if (S.miembros.length <= 4) return `<span class="tarjetas">${x.notas.map((n, i) => x.oculto && i > 0 ? tarjetaOculta(n.nombre) : tarjeta(n.puntaje, n.nombre)).join('')}</span>`;
   return `<span class="promedio${x.prom == null ? ' falta' : ''}" aria-label="Promedio ${nota(x.prom)}"><b class="num">${x.prom == null ? '?' : nota(Math.round(x.prom * 10) / 10)}</b></span>`;
 }
 function miniatura(x){ return x.foto && S.fotos[x.foto] ? `<img class="mini" src="${esc(S.fotos[x.foto])}" alt="" loading="lazy">` : ''; }
 function subFila(x){
+  if (x.oculto) return {t: x.votosTotales ? `Votá para ver las notas · ${x.votosTotales} ${x.votosTotales === 1 ? 'ya votó' : 'ya votaron'}` : 'Todavía nadie votó', choque:false, oculto:true};
   if (S.miembros.length === 2 && x.votos === 2 && x.rango >= 3) return {t:`No coinciden: ${x.notas.map(n => nota(n.puntaje)).join(' contra ')}`, choque:true};
   if (S.miembros.length > 2 && x.votos >= 2 && x.rango >= 4) return {t:`Polémico: de ${nota(Math.min(...x.notas.filter(n=>n.puntaje!=null).map(n=>n.puntaje)))} a ${nota(Math.max(...x.notas.filter(n=>n.puntaje!=null).map(n=>n.puntaje)))}`, choque:true};
   const partes = [x.lugar, fechaLinda(x.fecha)];
@@ -504,10 +536,11 @@ function render(){
     if (S.miembros.length === 2){
       const c = coincidencia();
       const n = comparables().filter(x => x.rango >= 3).length;
-      html += `<button class="afinidad" data-a="desac"><span><b>Coinciden en un ${c}%</b><br><span>${n ? `${n} ${n===1?'desacuerdo':'desacuerdos'}` : 'Ningún desacuerdo fuerte'}</span></span><span aria-hidden="true">›</span></button>`;
+      const t = comparables().length;
+      html += `<button class="afinidad" data-a="desac"><span><b>Coincidencia general: ${c}%</b><br><span>En ${t === 1 ? 'el veredicto que puntuaron' : `los ${t} veredictos que puntuaron`} los dos · ${n ? `${n} ${n===1?'desacuerdo':'desacuerdos'}` : 'sin desacuerdos fuertes'}</span></span><span aria-hidden="true">›</span></button>`;
     } else {
       const n = comparables().filter(x => x.rango >= 4).length;
-      html += `<button class="afinidad" data-a="desac"><span><b>El jurado</b><br><span>${n ? `${n} ${n===1?'veredicto polémico':'veredictos polémicos'}` : 'Sin grandes polémicas'} · quién es más exigente</span></span><span aria-hidden="true">›</span></button>`;
+      html += `<button class="afinidad" data-a="desac"><span><b>El jurado</b><br><span>Quién es más exigente, quién más generoso, y ${n ? `${n} ${n===1?'veredicto polémico':'veredictos polémicos'}` : 'los más polémicos'}</span></span><span aria-hidden="true">›</span></button>`;
     }
   }
   // Pestañas de categorías
@@ -544,7 +577,7 @@ function render(){
     else html += `<div class="lista">${lista.map((x,i) => { const s = subFila(x);
         return `<button class="item${i===0 && x.prom!=null ? ' top1' : ''}" data-a="abrir" data-id="${x.id}">
           <span class="pos num">${x.prom != null ? i+1 : '–'}</span>
-          <span class="fila-nom">${miniatura(x)}<span style="min-width:0"><span class="nom" style="display:block">${esc(x.nombre)}</span><span class="sub${s.choque?' choque':''}" style="display:block">${esc(s.t) || '&nbsp;'}</span></span></span>
+          <span class="fila-nom">${miniatura(x)}<span style="min-width:0"><span class="nom" style="display:block">${esc(x.nombre)}</span><span class="sub${s.choque?' choque':''}${s.oculto?' oculto':''}" style="display:block">${esc(s.t) || '&nbsp;'}</span></span></span>
           ${notasFila(x)}</button>`; }).join('')}</div>`;
   }
   m.innerHTML = html;
@@ -558,17 +591,15 @@ function vistaDesacuerdos(){
   const fuertes = cs.filter(x => x.rango >= umbral).slice(0, 15);
   const nombreCat = id => S.cats.find(c => c.id === id)?.nombre || '';
   let html = `<button class="volver" data-a="volverRank">‹ Volver</button>`;
-  if (enPareja){
-    html += `<section class="card" style="text-align:center"><p class="eyebrow">Coincidencia</p><h2 style="font-size:56px">${coincidencia()}%</h2>
-      <p style="margin:0;color:var(--muted)">Calculado sobre ${cs.length} ${cs.length===1?'veredicto puntuado':'veredictos puntuados'} por los dos.</p></section>`;
-  } else {
-    const js = jueces().sort((a,b) => a.prom - b.prom);
-    if (js.length >= 2){
-      const ex = js[0], ge = js[js.length - 1];
-      html += `<div class="jurados"><div class="jurado"><span>El más exigente</span><b>${esc(ex.nombre)}</b><span>Pone ${nota(Math.round(ex.prom*10)/10)} en promedio</span></div>
-        <div class="jurado"><span>El más generoso</span><b>${esc(ge.nombre)}</b><span>Pone ${nota(Math.round(ge.prom*10)/10)} en promedio</span></div></div>`;
-    } else html += `<section class="card"><p class="vacio">Cuando cada uno haya puntuado al menos 3 veredictos, acá van a ver quién es el más exigente y quién el más generoso.</p></section>`;
-  }
+  if (enPareja) html += `<section class="card" style="text-align:center"><p class="eyebrow">Coincidencia general</p><h2 style="font-size:56px">${coincidencia()}%</h2>
+      <p style="margin:0;color:var(--muted)">Es el promedio de qué tan parecidas fueron sus notas en ${cs.length === 1 ? 'el veredicto que puntuaron' : `los ${cs.length} veredictos que puntuaron`} los dos. 100% sería poner siempre la misma nota.</p></section>`;
+  // El más exigente y el más generoso (necesitan al menos 3 notas cada uno)
+  const js = jueces().sort((a,b) => a.prom - b.prom);
+  if (js.length >= 2){
+    const ex = js[0], ge = js[js.length - 1];
+    html += `<div class="jurados"><div class="jurado"><span>El más exigente</span><b>${esc(ex.user_id === S.yo ? 'Vos' : ex.nombre)}</b><span>Pone ${nota(Math.round(ex.prom*10)/10)} en promedio</span></div>
+      <div class="jurado"><span>El más generoso</span><b>${esc(ge.user_id === S.yo ? 'Vos' : ge.nombre)}</b><span>Pone ${nota(Math.round(ge.prom*10)/10)} en promedio</span></div></div>`;
+  } else html += `<section class="card"><p class="vacio">Cuando cada uno haya puntuado al menos 3 veredictos, acá van a ver quién es el más exigente y quién el más generoso.</p></section>`;
   html += `<h2>${enPareja ? 'Donde no coinciden' : 'Los más polémicos'}</h2>`;
   if (!fuertes.length) html += `<section class="card"><p class="vacio">${enPareja ? 'Por ahora coinciden en todo.' : 'Por ahora no hubo grandes polémicas.'}</p></section>`;
   else html += `<div class="lista">${fuertes.map(x => `<button class="item" data-a="abrir" data-id="${x.id}">
@@ -604,20 +635,19 @@ function abrirHoja(itemId, opciones = {}){
   H.pendiente = opciones.yaFuimos ? false : (x ? x.pendiente : S.vista === 'pend');
   H.nota = Math.round(mia?.puntaje ?? 8);
   H.asp = {}; H.aspectos.forEach(a => H.asp[a] = Math.round(mia?.aspectos?.[a] ?? mia?.puntaje ?? 8));
-  const sinNota = x && !x.pendiente && mia?.puntaje == null;
+  const sinNota = false;   // si abrís algo que todavía no puntuaste, es para votar: las estrellas aparecen listas
   const otrasNotas = n ? n.notas.slice(1) : [];
   $('#velo').innerHTML = `<form class="hoja" data-f="item" data-id="${x ? x.id : ''}" role="dialog" aria-modal="true" aria-labelledby="hTit" novalidate>
     <p class="eyebrow">${esc(cat.nombre)} · ${esc(grupo().nombre)}</p>
-    <h3 id="hTit">${opciones.yaFuimos ? '¡A dictar veredicto!' : x ? (x.pendiente ? 'Pendiente' : 'Editar veredicto') : 'Nuevo'}</h3>
+    <h3 id="hTit">${opciones.yaFuimos ? '¡A dictar veredicto!' : x ? (x.pendiente ? 'Pendiente' : (mia?.puntaje == null ? 'Tu veredicto' : 'Editar veredicto')) : 'Nuevo'}</h3>
     ${!x || x.pendiente ? `<div class="vistas" role="radiogroup" aria-label="Estado"><button type="button" role="radio" data-estado="hecho" class="${H.pendiente?'':'on'}" aria-checked="${!H.pendiente}">Ya fuimos</button>
       <button type="button" role="radio" data-estado="pend" class="${H.pendiente?'on':''}" aria-checked="${H.pendiente}">Queremos ir</button></div>` : ''}
     <div class="campo"><label for="fNombre">Nombre</label><input type="text" id="fNombre" maxlength="80" value="${esc(x?.nombre)}" placeholder="Ej: Café Tilo"><p class="err" id="eNombre" hidden></p></div>
+    ${x && !x.pendiente && otrasNotas.length ? bloqueGrupo(n) : ''}
     <div class="campo" id="zonaNota"${H.pendiente ? ' hidden' : ''}><label>Tu nota</label>
       <div id="notaControles"${sinNota ? ' hidden' : ''}>${controlesNota()}</div>
       <label class="sinnota"><input type="checkbox" id="fSinNota"${sinNota ? ' checked' : ''}> Todavía no lo puntué</label>
     </div>
-    ${otrasNotas.length && !x.pendiente ? `<div class="notas-de">${otrasNotas.map(o => `<div class="otro">${tarjeta(o.puntaje, o.nombre)}<span style="min-width:0">${o.puntaje != null ? `<b>${esc(o.nombre)}</b>` : `${esc(o.nombre)} todavía no lo puntuó`}
-        ${o.puntaje != null && H.aspectos.length && Object.keys(o.aspectos || {}).length ? `<br><span class="asp-otros">${H.aspectos.filter(a => o.aspectos[a] != null).map(a => `${esc(a)} ${nota(o.aspectos[a])}`).join(' · ')}</span>` : ''}</span></div>`).join('')}</div>` : ''}
     <div class="campo"><label>Foto <span style="font-weight:400">(opcional)</span></label><div id="zonaFoto"></div>
       <input type="file" id="fFoto" accept="image/*" hidden></div>
     <div class="dos">
@@ -660,7 +690,18 @@ async function achicar(archivo){
   c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
   return await new Promise(res => c.toBlob(res, 'image/jpeg', 0.82));
 }
-function botonHoja(x){ return H.pendiente ? (x ? 'Guardar' : 'Agregar a pendientes') : (x && !x.pendiente ? 'Guardar' : 'Dictar veredicto'); }
+// El veredicto del grupo para un ítem: promedio, coincidencia y la nota de cada uno
+function bloqueGrupo(n){
+  if (n.oculto) return `<div class="sellado">${CANDADO}<span>${n.votosTotales ? `${n.votosTotales} ${n.votosTotales === 1 ? 'persona ya votó' : 'personas ya votaron'}` : 'Todavía nadie votó'}. Poné tu nota para ver las de los demás.</span></div>`;
+  const filas = n.notas.map((o, i) => `<div class="otro">${tarjeta(o.puntaje, o.nombre)}<span style="min-width:0"><b>${i === 0 ? 'Vos' : esc(o.nombre)}</b>${o.puntaje == null ? ' <span class="asp-otros">todavía no votó</span>' : ''}
+      ${o.puntaje != null && H.aspectos.length && Object.keys(o.aspectos || {}).length ? `<br><span class="asp-otros">${H.aspectos.filter(a => o.aspectos[a] != null).map(a => `${esc(a)} ${nota(o.aspectos[a])}`).join(' · ')}</span>` : ''}</span></div>`).join('');
+  return `<div class="grupo-veredicto"><p class="eyebrow">Veredicto del grupo</p>
+    <div class="gv-cab"><div><span class="gv-nota num">${n.prom == null ? '–' : nota(Math.round(n.prom * 10) / 10)}</span><span class="gv-de">promedio de ${n.votos} ${n.votos === 1 ? 'nota' : 'notas'}</span></div>
+      ${n.coinc != null ? `<div class="gv-coinc"><b class="num">${n.coinc}%</b><span>${fraseCoinc(n.coinc)}</span></div>` : ''}</div>
+    <div class="notas-de">${filas}</div></div>`;
+}
+function botonHoja(x){ const yaVote = x && S.puntajes.some(p => p.item_id === x.id && p.user_id === S.yo);
+  return H.pendiente ? (x ? 'Guardar' : 'Agregar a pendientes') : (x && !x.pendiente && yaVote ? 'Guardar' : 'Dictar veredicto'); }
 // Con aspectos: un − y + por aspecto, y la nota general es el promedio. Sin aspectos: una sola nota.
 // 5 estrellas: cada media estrella es 1 punto (una nota de 7 son 3 estrellas y media)
 const PUNTA = 'M12 2.5l2.9 6 6.6.8-4.9 4.6 1.3 6.5L12 17.2 6.1 20.4l1.3-6.5L2.5 9.3l6.6-.8z';
