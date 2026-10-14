@@ -198,6 +198,14 @@ header.top h1{font-size:34px;line-height:1}
 .editor-asp input{flex:1;min-width:0}
 .quitar{width:36px;height:36px;border-radius:10px;border:1px solid var(--line);background:var(--bg);font-size:18px;line-height:1;color:var(--muted);flex:none}
 .notas-de{display:flex;flex-direction:column;gap:8px}
+
+/* ============ FOTOS ============ */
+.mini{width:44px;height:44px;border-radius:10px;object-fit:cover;flex:none;background:var(--soft)}
+.fila-nom{display:flex;align-items:center;gap:10px;min-width:0}
+.foto-grande{width:100%;max-height:300px;object-fit:cover;border-radius:12px;display:block;background:var(--soft)}
+.foto-botones{display:flex;gap:8px;flex-wrap:wrap}
+.foto-vacia{display:flex;align-items:center;justify-content:center;gap:8px;height:84px;border:1.5px dashed var(--off);border-radius:12px;color:var(--muted);font-weight:600;background:transparent;width:100%}
+.foto-vacia svg{width:22px;height:22px}
 </style>
 </head>
 <body>
@@ -273,6 +281,7 @@ const S = {
   catSel: null,      // categoría que estás mirando
   vista: 'rank',     // 'rank' (ranking), 'pend' (pendientes) o 'desac' (desacuerdos)
   confirma: null,    // qué está pidiendo confirmación
+  fotos: {},        // dirección temporal para ver cada foto: { 'grupo/foto.jpg': 'https://...' }
   listo: false
 };
 
@@ -323,7 +332,7 @@ const db = {
     const gid = S.grupoSel;
     const [c, i] = await Promise.all([
       sb.from('categorias').select('id,nombre,aspectos,creado').eq('espacio_id', gid).order('creado'),
-      sb.from('items').select('id,categoria_id,nombre,lugar,link,notas,fecha,pendiente,creado').eq('espacio_id', gid)
+      sb.from('items').select('id,categoria_id,nombre,lugar,link,notas,fecha,pendiente,foto,creado').eq('espacio_id', gid)
     ]);
     if (c.error) throw c.error; if (i.error) throw i.error;
     const ids = i.data.map(x => x.id);
@@ -334,8 +343,31 @@ const db = {
     S.items = i.data;
     S.puntajes = p.data.map(x => ({...x, puntaje:Number(x.puntaje), aspectos:x.aspectos || {}}));
     if (!S.cats.some(x => x.id === S.catSel)) { S.catSel = S.cats[0]?.id || null; }
+    await this.cargarFotos();
     S.listo = true;
     mostrar('app');
+  },
+  // Las fotos son privadas: pedimos una dirección temporal (válida por un día) para poder verlas
+  async cargarFotos(){
+    const faltan = S.items.map(x => x.foto).filter(f => f && !S.fotos[f]);
+    if (!faltan.length) return;
+    const { data, error } = await sb.storage.from('fotos').createSignedUrls(faltan, 60 * 60 * 24);
+    if (error){ console.error(error); return; }
+    data.forEach(d => { if (d.signedUrl) S.fotos[d.path] = d.signedUrl; });
+  },
+  // Sube una foto (ya achicada) a la carpeta del grupo y devuelve dónde quedó
+  async subirFoto(itemId, blob){
+    const ruta = `${S.grupoSel}/${itemId}-${Date.now()}.jpg`;
+    const { error } = await sb.storage.from('fotos').upload(ruta, blob, { contentType:'image/jpeg' });
+    if (error) throw error;
+    S.fotos[ruta] = URL.createObjectURL(blob);
+    return ruta;
+  },
+  async borrarFoto(ruta){
+    if (!ruta) return;
+    const { error } = await sb.storage.from('fotos').remove([ruta]);
+    if (error) console.error(error);   // si falla, no frenamos: la foto vieja queda sin usar
+    delete S.fotos[ruta];
   },
   async crearCat(nombre){
     nombre = nombre.trim().replace(/\s+/g,' '); if (!nombre) return;
@@ -376,8 +408,10 @@ const db = {
     if (antes) Object.assign(antes, fila); else S.puntajes.push(fila);
   },
   async borrarItem(id){
+    const foto = S.items.find(x => x.id === id)?.foto;
     const { error } = await sb.from('items').delete().eq('id', id); if (error) throw error;
     S.items = S.items.filter(x => x.id !== id); S.puntajes = S.puntajes.filter(p => p.item_id !== id); render();
+    await this.borrarFoto(foto);
   },
   async cambiarMiNombre(nombre){
     const { error } = await sb.from('miembros').update({nombre}).eq('espacio_id', S.grupoSel).eq('user_id', S.yo); if (error) throw error;
@@ -435,6 +469,7 @@ function notasFila(x){
   if (S.miembros.length <= 4) return `<span class="tarjetas">${x.notas.map(n => tarjeta(n.puntaje, n.nombre)).join('')}</span>`;
   return `<span class="promedio${x.prom == null ? ' falta' : ''}" aria-label="Promedio ${nota(x.prom)}"><b class="num">${x.prom == null ? '?' : nota(Math.round(x.prom * 10) / 10)}</b></span>`;
 }
+function miniatura(x){ return x.foto && S.fotos[x.foto] ? `<img class="mini" src="${esc(S.fotos[x.foto])}" alt="" loading="lazy">` : ''; }
 function subFila(x){
   if (S.miembros.length === 2 && x.votos === 2 && x.rango >= 3) return {t:`No coinciden: ${x.notas.map(n => nota(n.puntaje)).join(' contra ')}`, choque:true};
   if (S.miembros.length > 2 && x.votos >= 2 && x.rango >= 4) return {t:`Polémico: de ${nota(Math.min(...x.notas.filter(n=>n.puntaje!=null).map(n=>n.puntaje)))} a ${nota(Math.max(...x.notas.filter(n=>n.puntaje!=null).map(n=>n.puntaje)))}`, choque:true};
@@ -497,7 +532,7 @@ function render(){
     else html += `<div class="lista">${lista.map((x,i) => { const s = subFila(x);
         return `<button class="item${i===0 && x.prom!=null ? ' top1' : ''}" data-a="abrir" data-id="${x.id}">
           <span class="pos num">${x.prom != null ? i+1 : '–'}</span>
-          <span style="min-width:0"><span class="nom" style="display:block">${esc(x.nombre)}</span><span class="sub${s.choque?' choque':''}" style="display:block">${esc(s.t) || '&nbsp;'}</span></span>
+          <span class="fila-nom">${miniatura(x)}<span style="min-width:0"><span class="nom" style="display:block">${esc(x.nombre)}</span><span class="sub${s.choque?' choque':''}" style="display:block">${esc(s.t) || '&nbsp;'}</span></span></span>
           ${notasFila(x)}</button>`; }).join('')}</div>`;
   }
   m.innerHTML = html;
@@ -545,7 +580,7 @@ function mostrar(cual){
 /* =====================================================================
    7. VENTANAS: veredicto, aspectos, grupos y ajustes
    ===================================================================== */
-const H = { nota: 8, asp: {}, aspectos: [], pendiente: false };   // lo que estás eligiendo en la ventana abierta
+const H = { nota: 8, asp: {}, aspectos: [], pendiente: false, archivo: null, quitarFoto: false };   // lo que estás eligiendo en la ventana abierta
 
 function abrirHoja(itemId, opciones = {}){
   const x = itemId ? S.items.find(i => i.id === itemId) : null;
@@ -553,6 +588,7 @@ function abrirHoja(itemId, opciones = {}){
   const n = x ? notasDe(x.id) : null;
   const mia = n ? n.notas[0] : null;
   H.aspectos = cat.aspectos;
+  H.archivo = null; H.quitarFoto = false; H.fotoActual = x?.foto || null;
   H.pendiente = opciones.yaFuimos ? false : (x ? x.pendiente : S.vista === 'pend');
   H.nota = mia?.puntaje ?? 8;
   H.asp = {}; H.aspectos.forEach(a => H.asp[a] = mia?.aspectos?.[a] ?? mia?.puntaje ?? 8);
@@ -570,6 +606,8 @@ function abrirHoja(itemId, opciones = {}){
     </div>
     ${otrasNotas.length && !x.pendiente ? `<div class="notas-de">${otrasNotas.map(o => `<div class="otro">${tarjeta(o.puntaje, o.nombre)}<span style="min-width:0">${o.puntaje != null ? `<b>${esc(o.nombre)}</b>` : `${esc(o.nombre)} todavía no lo puntuó`}
         ${o.puntaje != null && H.aspectos.length && Object.keys(o.aspectos || {}).length ? `<br><span class="asp-otros">${H.aspectos.filter(a => o.aspectos[a] != null).map(a => `${esc(a)} ${nota(o.aspectos[a])}`).join(' · ')}</span>` : ''}</span></div>`).join('')}</div>` : ''}
+    <div class="campo"><label>Foto <span style="font-weight:400">(opcional)</span></label><div id="zonaFoto"></div>
+      <input type="file" id="fFoto" accept="image/*" hidden></div>
     <div class="dos">
       <div class="campo"><label for="fLugar">Lugar o barrio <span style="font-weight:400">(opcional)</span></label><input type="text" id="fLugar" maxlength="80" value="${esc(x?.lugar)}" placeholder="Ej: Palermo"></div>
       <div class="campo" id="zonaFecha"${H.pendiente ? ' hidden' : ''}><label for="fFecha">Fecha</label><input type="date" id="fFecha" value="${x && x.fecha ? x.fecha : (!x || opciones.yaFuimos ? hoy() : '')}" max="${hoy()}"></div>
@@ -588,7 +626,27 @@ function abrirHoja(itemId, opciones = {}){
   $('#fSinNota').onchange = e => { $('#notaControles').hidden = e.target.checked; };
   $('#fNombre').oninput = () => $('#eNombre').hidden = true;
   conectarRango();
+  dibujarFoto();
+  $('#fFoto').onchange = e => { const f = e.target.files[0]; if (f){ H.archivo = f; H.quitarFoto = false; dibujarFoto(); } };
   if (!x) setTimeout(() => $('#fNombre').focus(), 60);
+}
+// La zona de la foto dentro de la ventana: vacía, con la foto actual o con la que acabás de elegir
+const ICONO_FOTO = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8h3l2-3h6l2 3h3v11H4z"/><circle cx="12" cy="13" r="3.5"/></svg>';
+function dibujarFoto(){
+  const url = H.archivo ? URL.createObjectURL(H.archivo) : (!H.quitarFoto && H.fotoActual ? S.fotos[H.fotoActual] : null);
+  $('#zonaFoto').innerHTML = url
+    ? `<img class="foto-grande" src="${esc(url)}" alt="Foto del veredicto"><div class="foto-botones" style="margin-top:8px">
+        <button type="button" class="btn chico" data-a="elegirFoto">Cambiar foto</button><button type="button" class="btn chico dan" data-a="quitarFoto">Quitar</button></div>`
+    : `<button type="button" class="foto-vacia" data-a="elegirFoto">${ICONO_FOTO} Agregar foto</button>`;
+}
+// Achica la foto antes de subirla: como mucho 1280 píxeles de lado, en JPEG
+async function achicar(archivo){
+  const img = await createImageBitmap(archivo, { imageOrientation:'from-image' });
+  const k = Math.min(1, 1280 / Math.max(img.width, img.height));
+  const c = document.createElement('canvas');
+  c.width = Math.round(img.width * k); c.height = Math.round(img.height * k);
+  c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
+  return await new Promise(res => c.toBlob(res, 'image/jpeg', 0.82));
 }
 function botonHoja(x){ return H.pendiente ? (x ? 'Guardar' : 'Agregar a pendientes') : (x && !x.pendiente ? 'Guardar' : 'Dictar veredicto'); }
 // Con aspectos: un − y + por aspecto, y la nota general es el promedio. Sin aspectos: una sola nota.
@@ -625,9 +683,16 @@ async function guardarItem(form){
     else if (H.aspectos.length) miNota = { puntaje: notaGeneral(), aspectos: {...H.asp} };
     else miNota = { puntaje: H.nota, aspectos: {} };
   }
+  const archivo = H.archivo, quitar = H.quitarFoto, fotoVieja = previo?.foto || null;
+  fila.foto = fotoVieja;
   cerrarHoja();
   const eraPend = previo?.pendiente;
-  const ok = await seguro(() => db.guardarItem(fila, miNota),
+  const ok = await seguro(async () => {
+    if (archivo){ toast('Subiendo la foto…'); fila.foto = await db.subirFoto(id, await achicar(archivo)); }
+    else if (quitar) fila.foto = null;
+    await db.guardarItem(fila, miNota);
+    if (fotoVieja && fila.foto !== fotoVieja) await db.borrarFoto(fotoVieja);   // la foto anterior ya no se usa
+  },
     H.pendiente ? (previo ? 'Pendiente guardado' : 'Agregado a pendientes') : (previo && !eraPend ? 'Veredicto actualizado' : 'Veredicto dictado'));
   if (ok && eraPend && !H.pendiente){ S.vista = 'rank'; render(); }
 }
@@ -765,6 +830,8 @@ document.addEventListener('click', async e => {
   else if (a === 'abrir') abrirHoja(id);
   else if (a === 'yaFuimos') abrirHoja(id, {yaFuimos:true});
   else if (a === 'cerrar') cerrarHoja();
+  else if (a === 'elegirFoto') $('#fFoto').click();
+  else if (a === 'quitarFoto'){ H.archivo = null; H.quitarFoto = true; $('#fFoto').value = ''; dibujarFoto(); }
   else if (a === 'pedirBorrarItem'){
     $('#zonaBorrar').innerHTML = `<div class="confirma"><span>¿Borrar esto y las notas de todo el grupo?</span>
       <button type="button" class="btn chico" data-a="noBorrarItem">No</button><button type="button" class="btn chico dan" data-a="borrarItem">Sí, borrar</button></div>`; }
