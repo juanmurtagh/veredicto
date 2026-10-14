@@ -152,6 +152,49 @@ header.top h1{font-size:34px;line-height:1}
 .tema button{border:0;background:transparent;border-radius:999px;padding:5px 12px;font-size:13px;font-weight:600;color:var(--muted)}
 .tema button.on{background:var(--surface);color:var(--ink);box-shadow:0 1px 2px rgba(0,0,0,.12)}
 @media (prefers-reduced-motion:no-preference){.velo .hoja{animation:sube .2s ease-out}@keyframes sube{from{transform:translateY(24px);opacity:.6}}}
+
+/* ============ GRUPOS ============ */
+.grupo-btn{display:inline-flex;align-items:center;gap:6px;max-width:100%;border:0;background:none;padding:0;color:var(--muted);font-weight:600;font-size:15px}
+.grupo-btn span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.grupo-btn svg{width:16px;height:16px;flex:none}
+.titulo{display:flex;flex-direction:column;gap:6px;min-width:0}
+.grupos{display:flex;flex-direction:column;gap:8px}
+.grupo{display:flex;justify-content:space-between;align-items:center;gap:12px;width:100%;text-align:left;padding:12px 14px;border-radius:12px;border:1px solid var(--line);background:var(--bg)}
+.grupo.on{border-color:var(--accent);box-shadow:0 0 0 1px var(--accent)}
+.grupo b{font-size:15px}
+.grupo span{font-size:13px;color:var(--muted)}
+.miembro{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--line);font-size:15px}
+.miembro:last-child{border-bottom:0}
+.etiqueta{font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin-left:6px}
+
+/* ============ COINCIDENCIA Y POLÉMICOS ============ */
+.afinidad{display:flex;justify-content:space-between;align-items:center;gap:12px;width:100%;text-align:left;background:var(--accent);color:var(--accent-ink);border:0;border-radius:var(--r);padding:14px 16px}
+.afinidad b{font-family:var(--display);font-weight:400;font-size:26px;line-height:1.1}
+.afinidad span{font-size:14px;opacity:.9}
+.jurados{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:10px}
+.jurado{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:14px;display:flex;flex-direction:column;gap:2px}
+.jurado b{font-family:var(--display);font-weight:400;font-size:22px}
+.jurado span{font-size:13px;color:var(--muted)}
+.volver{align-self:flex-start;background:transparent;border:0;color:var(--accent);font-weight:600;padding:0}
+
+/* ============ VISTAS, PENDIENTES Y ASPECTOS ============ */
+.vistas{display:flex;background:var(--soft);border-radius:12px;padding:4px;gap:4px}
+.vistas button{flex:1;height:36px;border:0;border-radius:9px;background:transparent;font-weight:600;color:var(--muted)}
+.vistas button.on{background:var(--surface);color:var(--ink);box-shadow:0 1px 2px rgba(0,0,0,.12)}
+.promedio{width:50px;height:50px;border-radius:50%;border:2px solid var(--accent);color:var(--accent);display:flex;flex-direction:column;align-items:center;justify-content:center;line-height:1}
+.promedio b{font-family:var(--display);font-weight:400;font-size:19px}
+.promedio.falta{border-style:dashed;border-color:var(--off);color:var(--muted)}
+.item .pend{width:28px;height:28px;border-radius:50%;border:1.5px dashed var(--off);justify-self:center}
+.asp{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:10px;padding:6px 0;border-bottom:1px solid var(--line)}
+.asp:last-child{border-bottom:0}
+.asp .ctrl{display:flex;align-items:center;gap:8px}
+.asp .val{min-width:40px;text-align:center;font-family:var(--display);font-size:22px}
+.paso.chico{width:36px;height:36px;font-size:20px}
+.asp-otros{font-size:12px;color:var(--muted)}
+.editor-asp{display:flex;gap:8px;align-items:center}
+.editor-asp input{flex:1;min-width:0}
+.quitar{width:36px;height:36px;border-radius:10px;border:1px solid var(--line);background:var(--bg);font-size:18px;line-height:1;color:var(--muted);flex:none}
+.notas-de{display:flex;flex-direction:column;gap:8px}
 </style>
 </head>
 <body>
@@ -167,7 +210,7 @@ header.top h1{font-size:34px;line-height:1}
 
 <!-- ============ PANTALLA DE INGRESO ============ -->
 <form id="login" class="portada" hidden novalidate>
-  <div class="marca"><span class="lugar-sello"></span><h1>Veredicto</h1><p>Cafés, cenas y películas, puntuados de a dos.</p></div>
+  <div class="marca"><span class="lugar-sello"></span><h1>Veredicto</h1><p>Cafés, cenas y películas, puntuados en grupo.</p></div>
   <div class="campo"><label for="lEmail">Email</label><input type="email" id="lEmail" autocomplete="email" placeholder="tu@email.com"></div>
   <div class="campo"><label for="lPass">Contraseña</label>
     <div class="pass"><input type="password" id="lPass" autocomplete="current-password"><button type="button" class="ver" id="lVer">Mostrar</button></div>
@@ -178,30 +221,27 @@ header.top h1{font-size:34px;line-height:1}
   <div class="tema" role="group" aria-label="Apariencia"><button type="button" data-tema="auto">Auto</button><button type="button" data-tema="claro">Claro</button><button type="button" data-tema="oscuro">Oscuro</button></div>
 </form>
 
-<!-- ============ BIENVENIDA: crear el espacio o unirse con un código ============ -->
-<form id="bienvenida" class="portada" hidden novalidate>
-  <div class="marca"><span class="lugar-sello"></span><h1>Bienvenidos</h1><p>Primero, armemos el lugar que van a compartir.</p></div>
-  <div class="campo"><label for="bNombre">¿Cómo te llamás?</label><input type="text" id="bNombre" maxlength="30" placeholder="Así te va a ver la otra persona" autocomplete="given-name"></div>
-  <div class="opciones" role="radiogroup" aria-label="¿Qué querés hacer?">
-    <button type="button" class="opcion on" data-modo="crear" role="radio" aria-checked="true"><b>Crear nuestro espacio</b><span>Te damos un código para invitar a tu pareja.</span></button>
-    <button type="button" class="opcion" data-modo="unirse" role="radio" aria-checked="false"><b>Tengo un código</b><span>Tu pareja ya creó el espacio y te pasó el código.</span></button>
-  </div>
-  <div class="campo" id="bCampoCodigo" hidden><label for="bCodigo">Código</label><input type="text" id="bCodigo" maxlength="12" placeholder="Ej: A1B2C3D4" autocomplete="off" style="text-transform:uppercase;letter-spacing:.1em"></div>
-  <p class="err" id="bErr" hidden></p>
-  <button type="submit" class="btn pri" id="bListo">Crear espacio</button>
+<!-- ============ BIENVENIDA: tu primer grupo ============ -->
+<div id="bienvenida" class="portada" hidden>
+  <div class="marca"><span class="lugar-sello"></span><h1>Bienvenido</h1><p>Primero, armá tu primer grupo, o sumate al de alguien con su código.</p></div>
+  <div id="bForm"></div>
   <p class="cambiar"><button type="button" class="link" data-a="salir">Cerrar sesión</button></p>
-</form>
+</div>
 
 <!-- ============ LA APLICACIÓN ============ -->
 <div id="app" class="wrap" hidden>
   <header class="top">
-    <h1>Veredicto</h1>
-    <button class="ico" data-a="ajustes" aria-label="Ajustes"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 7h16M4 12h16M4 17h16"/></svg></button>
+    <div class="titulo">
+      <h1>Veredicto</h1>
+      <button class="grupo-btn" data-a="grupos" aria-label="Cambiar de grupo"><span id="nombreGrupo"></span>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg></button>
+    </div>
+    <button class="ico" data-a="ajustes" aria-label="Ajustes del grupo"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 7h16M4 12h16M4 17h16"/></svg></button>
   </header>
   <main id="main" class="wrap" style="width:100%"></main>
 </div>
 
-<div class="pie" id="pie" hidden><button class="btn pri" data-a="nuevo">Dictar veredicto</button></div>
+<div class="pie" id="pie" hidden><button class="btn pri" data-a="nuevo" id="btnPie">Dictar veredicto</button></div>
 <div id="velo" class="velo" hidden></div>
 <div id="toast" class="toast" role="status" hidden></div>
 
@@ -218,14 +258,25 @@ const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
    2. ESTADO: todo lo que la página "sabe" en este momento
    ===================================================================== */
 const SUGERIDAS = ['Cafés','Cenas','Películas','Heladerías','Series','Brunch'];
+// Aspectos que se proponen al crear algunas categorías (después se pueden cambiar)
+const ASPECTOS_SUG = {
+  'cafes':['Café','Comida','Ambiente','Precio'], 'cenas':['Comida','Ambiente','Atención','Precio'],
+  'peliculas':['Historia','Actuación','Entretenida'], 'series':['Historia','Personajes','Final'],
+  'heladerias':['Sabor','Variedad','Precio'], 'brunch':['Comida','Café','Ambiente','Precio'],
+  'restaurantes':['Comida','Ambiente','Atención','Precio'], 'bares':['Tragos','Ambiente','Precio'],
+  'hamburgueserias':['Hamburguesa','Papas','Precio'], 'pizzerias':['Pizza','Ambiente','Precio']
+};
 const S = {
   yo: null,          // mi id de usuario
-  espacio: null,     // { id, codigo }
-  miembros: [],      // [{ user_id, nombre }]
-  cats: [],          // [{ id, nombre }]
-  items: [],         // [{ id, categoria_id, nombre, lugar, link, notas, fecha }]
-  puntajes: [],      // [{ item_id, user_id, puntaje }]
+  grupos: [],        // todos mis grupos: [{ id, nombre, codigo, creado_por }]
+  todosMiembros: [], // los miembros de todos mis grupos
+  grupoSel: null,    // id del grupo que estoy mirando
+  miembros: [],      // miembros del grupo actual: [{ user_id, nombre }]
+  cats: [],          // [{ id, nombre, aspectos:[] }]
+  items: [],         // [{ id, categoria_id, nombre, lugar, link, notas, fecha, pendiente }]
+  puntajes: [],      // [{ item_id, user_id, puntaje, aspectos:{} }]
   catSel: null,      // categoría que estás mirando
+  vista: 'rank',     // 'rank' (ranking), 'pend' (pendientes) o 'desac' (desacuerdos)
   confirma: null,    // qué está pidiendo confirmación
   listo: false
 };
@@ -235,59 +286,74 @@ const S = {
    ===================================================================== */
 const $ = s => document.querySelector(s);
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-const nota = n => n == null ? '–' : String(n).replace('.', ',').replace(',0', '');   // 8.5 -> "8,5" · 9 -> "9"
+const nota = n => n == null ? '–' : (Math.round(n * 10) / 10).toString().replace('.', ',');   // 8.5 -> "8,5"
+const medio = n => Math.round(n * 2) / 2;                       // redondea a medio punto: 7.75 -> 8
 const inicial = nombre => (nombre || '?').trim().charAt(0).toUpperCase();
+const sinTildes = t => String(t || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
 function hoy(){ const d=new Date(); return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); }
 function nuevoId(){ return crypto.randomUUID ? crypto.randomUUID() : 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g,c=>{const r=Math.random()*16|0;return (c==='x'?r:(r&3|8)).toString(16)}); }
 function fechaLinda(f){ if(!f) return ''; return new Date(f+'T12:00').toLocaleDateString('es-AR',{day:'numeric',month:'short',year:'numeric'}).replace('.', ''); }
 function toast(t){ const el=$('#toast'); el.textContent=t; el.hidden=false; clearTimeout(toast.t); toast.t=setTimeout(()=>el.hidden=true,2600); }
 async function seguro(fn, ok){
   try { await fn(); if (ok) toast(ok); return true; }
-  catch(e){ console.error(e); toast('No se pudo guardar. Revisá tu conexión y probá de nuevo.'); return false; }
+  catch(e){ console.error(e); toast(e?.message && /grupo|código|vos mismo/.test(e.message) ? e.message : 'No se pudo guardar. Revisá tu conexión y probá de nuevo.'); return false; }
 }
-function yo(){ return S.miembros.find(m => m.user_id === S.yo) || {nombre:'Vos'}; }
-function pareja(){ return S.miembros.find(m => m.user_id !== S.yo) || null; }
-function sello(){ return $('#tplSello').innerHTML; }
-document.querySelectorAll('.lugar-sello').forEach(el => el.innerHTML = sello());
+const grupo = () => S.grupos.find(g => g.id === S.grupoSel);
+const yo = () => S.miembros.find(m => m.user_id === S.yo) || {user_id:S.yo, nombre:'Vos'};
+const otros = () => S.miembros.filter(m => m.user_id !== S.yo);
+const jurado = () => [yo(), ...otros()];           // yo primero, después el resto
+const soyCreador = () => grupo()?.creado_por === S.yo;
+const catActual = () => S.cats.find(c => c.id === S.catSel);
+function aspectosSugeridos(nombre){ return ASPECTOS_SUG[sinTildes(nombre).trim()] || []; }
+function recordarGrupo(id){ try { localStorage.setItem('veredicto-grupo', id); } catch(e){} }
+function grupoRecordado(){ try { return localStorage.getItem('veredicto-grupo'); } catch(e){ return null; } }
+document.querySelectorAll('.lugar-sello').forEach(el => el.innerHTML = $('#tplSello').innerHTML);
 
 /* =====================================================================
    4. BASE DE DATOS: leer y guardar en Supabase
    ===================================================================== */
 const db = {
-  // ¿Ya pertenezco a un espacio? Si sí, cargo todo lo de ese espacio
+  // Carga mis grupos, y todo lo del grupo elegido
   async cargar(){
-    const m = await sb.from('miembros').select('espacio_id,user_id,nombre');
-    if (m.error) throw m.error;
-    const mio = m.data.find(r => r.user_id === S.yo);
-    if (!mio){ mostrar('bienvenida'); return; }
-    const espId = mio.espacio_id;
-    const [e, c, i, p] = await Promise.all([
-      sb.from('espacios').select('id,codigo').eq('id', espId).single(),
-      sb.from('categorias').select('id,nombre,creado').eq('espacio_id', espId).order('creado'),
-      sb.from('items').select('id,categoria_id,nombre,lugar,link,notas,fecha,pendiente,creado').eq('espacio_id', espId),
-      sb.from('puntajes').select('item_id,user_id,puntaje')
+    const [m, g] = await Promise.all([
+      sb.from('miembros').select('espacio_id,user_id,nombre,unido'),
+      sb.from('espacios').select('id,nombre,codigo,creado_por,creado')
     ]);
-    for (const r of [e, c, i, p]) if (r.error) throw r.error;
-    S.espacio = e.data;
-    S.miembros = m.data.filter(r => r.espacio_id === espId);
-    S.cats = c.data;
-    S.items = i.data.filter(x => !x.pendiente);
-    S.puntajes = p.data.map(x => ({...x, puntaje:Number(x.puntaje)}));
-    if (!S.cats.find(x => x.id === S.catSel)) S.catSel = S.cats[0]?.id || null;
+    if (m.error) throw m.error; if (g.error) throw g.error;
+    S.todosMiembros = m.data;
+    S.grupos = g.data.filter(x => m.data.some(r => r.espacio_id === x.id && r.user_id === S.yo))
+      .sort((a,b) => (a.creado||'').localeCompare(b.creado||''));
+    if (!S.grupos.length){ S.listo = false; mostrar('bienvenida'); formGrupo($('#bForm'), 'crear', true); return; }
+    if (!S.grupos.some(x => x.id === S.grupoSel)) S.grupoSel = S.grupos.some(x => x.id === grupoRecordado()) ? grupoRecordado() : S.grupos[0].id;
+    recordarGrupo(S.grupoSel);
+    const gid = S.grupoSel;
+    const [c, i] = await Promise.all([
+      sb.from('categorias').select('id,nombre,aspectos,creado').eq('espacio_id', gid).order('creado'),
+      sb.from('items').select('id,categoria_id,nombre,lugar,link,notas,fecha,pendiente,creado').eq('espacio_id', gid)
+    ]);
+    if (c.error) throw c.error; if (i.error) throw i.error;
+    const ids = i.data.map(x => x.id);
+    const p = ids.length ? await sb.from('puntajes').select('item_id,user_id,puntaje,aspectos').in('item_id', ids) : {data:[]};
+    if (p.error) throw p.error;
+    S.miembros = m.data.filter(r => r.espacio_id === gid).sort((a,b) => (a.unido||'').localeCompare(b.unido||''));
+    S.cats = c.data.map(x => ({...x, aspectos: Array.isArray(x.aspectos) ? x.aspectos : []}));
+    S.items = i.data;
+    S.puntajes = p.data.map(x => ({...x, puntaje:Number(x.puntaje), aspectos:x.aspectos || {}}));
+    if (!S.cats.some(x => x.id === S.catSel)) { S.catSel = S.cats[0]?.id || null; }
     S.listo = true;
     mostrar('app');
   },
   async crearCat(nombre){
     nombre = nombre.trim().replace(/\s+/g,' '); if (!nombre) return;
     const ya = S.cats.find(c => c.nombre.toLowerCase() === nombre.toLowerCase());
-    if (ya){ S.catSel = ya.id; render(); return; }
-    const fila = { id:nuevoId(), espacio_id:S.espacio.id, nombre };
+    if (ya){ S.catSel = ya.id; S.vista = 'rank'; render(); return; }
+    const fila = { id:nuevoId(), espacio_id:S.grupoSel, nombre, aspectos:aspectosSugeridos(nombre) };
     const { error } = await sb.from('categorias').insert(fila); if (error) throw error;
-    S.cats.push({...fila, creado:new Date().toISOString()}); S.catSel = fila.id; render();
+    S.cats.push({...fila, creado:new Date().toISOString()}); S.catSel = fila.id; S.vista = 'rank'; render();
   },
-  async renombrarCat(id, nombre){
-    const { error } = await sb.from('categorias').update({nombre}).eq('id', id); if (error) throw error;
-    S.cats.find(c => c.id === id).nombre = nombre; render();
+  async editarCat(id, cambios){
+    const { error } = await sb.from('categorias').update(cambios).eq('id', id); if (error) throw error;
+    Object.assign(S.cats.find(c => c.id === id), cambios); render();
   },
   async borrarCat(id){
     const { error } = await sb.from('categorias').delete().eq('id', id); if (error) throw error;   // sus ítems se borran solos
@@ -297,47 +363,70 @@ const db = {
     S.cats = S.cats.filter(c => c.id !== id); S.catSel = S.cats[0]?.id || null; render();
   },
   async guardarItem(fila, miNota){
-    const { error } = await sb.from('items').upsert({...fila, espacio_id:S.espacio.id}); if (error) throw error;
+    const { error } = await sb.from('items').upsert({...fila, espacio_id:S.grupoSel}); if (error) throw error;
     const i = S.items.findIndex(x => x.id === fila.id);
     if (i >= 0) S.items[i] = {...S.items[i], ...fila}; else S.items.push({...fila, creado:new Date().toISOString()});
-    await this.guardarNota(fila.id, miNota);
+    if (miNota !== undefined) await this.guardarNota(fila.id, miNota);
     render();
   },
-  async guardarNota(itemId, n){
+  // miNota: null (sin nota) o { puntaje, aspectos }
+  async guardarNota(itemId, miNota){
     const antes = S.puntajes.find(p => p.item_id === itemId && p.user_id === S.yo);
-    if (n == null){
+    if (miNota == null){
       if (!antes) return;
       const { error } = await sb.from('puntajes').delete().eq('item_id', itemId).eq('user_id', S.yo); if (error) throw error;
       S.puntajes = S.puntajes.filter(p => p !== antes); return;
     }
-    const { error } = await sb.from('puntajes').upsert({item_id:itemId, user_id:S.yo, puntaje:n, actualizado:new Date().toISOString()});
-    if (error) throw error;
-    if (antes) antes.puntaje = n; else S.puntajes.push({item_id:itemId, user_id:S.yo, puntaje:n});
+    const fila = { item_id:itemId, user_id:S.yo, puntaje:miNota.puntaje, aspectos:miNota.aspectos || {}, actualizado:new Date().toISOString() };
+    const { error } = await sb.from('puntajes').upsert(fila); if (error) throw error;
+    if (antes) Object.assign(antes, fila); else S.puntajes.push(fila);
   },
   async borrarItem(id){
     const { error } = await sb.from('items').delete().eq('id', id); if (error) throw error;
     S.items = S.items.filter(x => x.id !== id); S.puntajes = S.puntajes.filter(p => p.item_id !== id); render();
   },
-  async cambiarNombre(nombre){
-    const { error } = await sb.from('miembros').update({nombre}).eq('espacio_id', S.espacio.id).eq('user_id', S.yo); if (error) throw error;
+  async cambiarMiNombre(nombre){
+    const { error } = await sb.from('miembros').update({nombre}).eq('espacio_id', S.grupoSel).eq('user_id', S.yo); if (error) throw error;
     yo().nombre = nombre; render();
+  },
+  async rpc(nombre, args){
+    const { data, error } = await sb.rpc(nombre, args); if (error) throw error; return data;
   }
 };
 
 /* =====================================================================
-   5. CÁLCULOS: puntajes y ranking
+   5. CÁLCULOS: notas, ranking, coincidencia y polémicos
    ===================================================================== */
+// Las notas de cada miembro para un ítem, y el promedio del grupo
 function notasDe(itemId){
-  const mia = S.puntajes.find(p => p.item_id === itemId && p.user_id === S.yo)?.puntaje ?? null;
-  const p2 = pareja();
-  const suya = p2 ? (S.puntajes.find(p => p.item_id === itemId && p.user_id === p2.user_id)?.puntaje ?? null) : null;
-  const hay = [mia, suya].filter(n => n != null);
+  const notas = jurado().map(m => {
+    const p = S.puntajes.find(x => x.item_id === itemId && x.user_id === m.user_id);
+    return { ...m, puntaje: p ? p.puntaje : null, aspectos: p ? p.aspectos : {} };
+  });
+  const hay = notas.filter(n => n.puntaje != null).map(n => n.puntaje);
   const prom = hay.length ? hay.reduce((a,b)=>a+b,0) / hay.length : null;
-  return { mia, suya, prom, choque: mia != null && suya != null && Math.abs(mia - suya) >= 3 };
+  const rango = hay.length >= 2 ? Math.max(...hay) - Math.min(...hay) : 0;   // qué tan repartidas están las notas
+  return { notas, prom, votos: hay.length, rango, mia: notas[0].puntaje };
 }
 function ranking(catId){
-  return S.items.filter(x => x.categoria_id === catId).map(x => ({...x, ...notasDe(x.id)}))
+  return S.items.filter(x => x.categoria_id === catId && !x.pendiente).map(x => ({...x, ...notasDe(x.id)}))
     .sort((a,b) => (b.prom ?? -1) - (a.prom ?? -1) || (b.fecha||'').localeCompare(a.fecha||'') || a.nombre.localeCompare(b.nombre,'es'));
+}
+const pendientes = catId => S.items.filter(x => x.categoria_id === catId && x.pendiente).sort((a,b) => (b.creado||'').localeCompare(a.creado||''));
+// Ítems puntuados por al menos dos personas (para comparar)
+function comparables(){ return S.items.filter(x => !x.pendiente).map(x => ({...x, ...notasDe(x.id)})).filter(x => x.votos >= 2); }
+// En pareja: qué tanto coinciden (100% = notas idénticas)
+function coincidencia(){
+  const cs = comparables(); if (!cs.length) return null;
+  const dif = cs.reduce((s,x) => s + x.rango, 0) / cs.length;
+  return Math.round(100 - dif / 9 * 100);
+}
+// En grupo: el promedio de notas que pone cada uno (para el más exigente y el más generoso)
+function jueces(){
+  return jurado().map(m => {
+    const ps = S.puntajes.filter(p => p.user_id === m.user_id && S.items.some(i => i.id === p.item_id && !i.pendiente));
+    return { ...m, cant: ps.length, prom: ps.length ? ps.reduce((s,p)=>s+p.puntaje,0) / ps.length : null };
+  }).filter(j => j.cant >= 3);
 }
 
 /* =====================================================================
@@ -347,15 +436,39 @@ function tarjeta(n, quien){
   if (n == null) return `<span class="tarjeta falta" aria-label="${esc(quien)}: sin nota"><b>?</b><small>${esc(inicial(quien))}</small></span>`;
   return `<span class="tarjeta${n < 5 ? ' baja' : ''}" aria-label="${esc(quien)}: ${nota(n)}"><b class="num">${nota(n)}</b><small>${esc(inicial(quien))}</small></span>`;
 }
+// En grupos de hasta 4 se ven las tarjetas de cada uno; en grupos más grandes, el promedio
+function notasFila(x){
+  if (S.miembros.length <= 4) return `<span class="tarjetas">${x.notas.map(n => tarjeta(n.puntaje, n.nombre)).join('')}</span>`;
+  return `<span class="promedio${x.prom == null ? ' falta' : ''}" aria-label="Promedio ${nota(x.prom)}"><b class="num">${x.prom == null ? '?' : nota(Math.round(x.prom * 10) / 10)}</b></span>`;
+}
+function subFila(x){
+  if (S.miembros.length === 2 && x.votos === 2 && x.rango >= 3) return {t:`No coinciden: ${x.notas.map(n => nota(n.puntaje)).join(' contra ')}`, choque:true};
+  if (S.miembros.length > 2 && x.votos >= 2 && x.rango >= 4) return {t:`Polémico: de ${nota(Math.min(...x.notas.filter(n=>n.puntaje!=null).map(n=>n.puntaje)))} a ${nota(Math.max(...x.notas.filter(n=>n.puntaje!=null).map(n=>n.puntaje)))}`, choque:true};
+  const partes = [x.lugar, fechaLinda(x.fecha)];
+  if (S.miembros.length > 4) partes.push(`${x.votos} de ${S.miembros.length} votaron`);
+  return {t: partes.filter(Boolean).join(' · '), choque:false};
+}
 
 function render(){
   if (!S.listo) return;
+  $('#nombreGrupo').textContent = grupo().nombre;
   const m = $('#main');
-  const p2 = pareja();
+  if (S.vista === 'desac'){ m.innerHTML = vistaDesacuerdos(); $('#pie').hidden = true; return; }
   let html = '';
-  // Aviso para invitar a la pareja, mientras todavía no se unió
-  if (!p2) html += `<div class="invitar"><p>Pasale este código a tu pareja para que se una:</p>
-      <span class="codigo">${esc(S.espacio.codigo)}</span><button class="btn chico" data-a="copiar">Copiar</button></div>`;
+  // Si estás solo en el grupo, el aviso para invitar
+  if (!otros().length) html += `<div class="invitar"><p>Pasale este código a quienes quieras sumar a <b>${esc(grupo().nombre)}</b>:</p>
+      <span class="codigo">${esc(grupo().codigo)}</span><button class="btn chico" data-a="copiar">Copiar</button></div>`;
+  // La tarjeta de coincidencia (en pareja) o de polémicos (en grupo)
+  if (otros().length && comparables().length){
+    if (S.miembros.length === 2){
+      const c = coincidencia();
+      const n = comparables().filter(x => x.rango >= 3).length;
+      html += `<button class="afinidad" data-a="desac"><span><b>Coinciden en un ${c}%</b><br><span>${n ? `${n} ${n===1?'desacuerdo':'desacuerdos'}` : 'Ningún desacuerdo fuerte'}</span></span><span aria-hidden="true">›</span></button>`;
+    } else {
+      const n = comparables().filter(x => x.rango >= 4).length;
+      html += `<button class="afinidad" data-a="desac"><span><b>El jurado</b><br><span>${n ? `${n} ${n===1?'veredicto polémico':'veredictos polémicos'}` : 'Sin grandes polémicas'} · quién es más exigente</span></span><span aria-hidden="true">›</span></button>`;
+    }
+  }
   // Pestañas de categorías
   html += `<nav class="cats" aria-label="Categorías">${S.cats.map(c => `<button class="cat${c.id===S.catSel?' on':''}" data-a="cat" data-id="${c.id}">${esc(c.nombre)}</button>`).join('')}
       <button class="cat mas" data-a="nuevaCat">+ Categoría</button></nav>`;
@@ -367,23 +480,62 @@ function render(){
     m.innerHTML = html; $('#pie').hidden = true; return;
   }
   $('#pie').hidden = false;
-  const cat = S.cats.find(c => c.id === S.catSel);
-  const lista = ranking(cat.id);
+  const cat = catActual();
+  const lista = ranking(cat.id), pend = pendientes(cat.id);
+  $('#btnPie').textContent = S.vista === 'pend' ? 'Agregar pendiente' : 'Dictar veredicto';
   html += `<div class="rank-cab"><h2>${esc(cat.nombre)}</h2><button class="link" data-a="editarCat" style="font-size:14px">Editar</button></div>`;
-  if (S.confirma === 'cat') html += `<div class="confirma"><span>${lista.length ? `Se van a borrar también ${lista.length === 1 ? 'el veredicto' : `los ${lista.length} veredictos`} de esta categoría.` : '¿Borrar esta categoría?'}</span>
-      <button class="btn chico" data-a="no">Cancelar</button><button class="btn chico dan" data-a="borrarCat">Sí, borrar</button></div>`;
+  if (S.confirma === 'menuCat') html += `<div class="confirma"><span>¿Qué querés cambiar de "${esc(cat.nombre)}"?</span>
+      <button class="btn chico" data-a="aspectos">Aspectos</button><button class="btn chico" data-a="pedirRenombrar">Nombre</button><button class="btn chico dan" data-a="pedirBorrarCat">Borrar</button><button class="btn chico" data-a="no">Cancelar</button></div>`;
   if (S.confirma === 'renombrar') html += `<form class="confirma" data-f="renombrar"><input type="text" id="inRenombrar" value="${esc(cat.nombre)}" maxlength="40" aria-label="Nuevo nombre" style="flex:1;min-width:150px">
       <button class="btn chico" type="button" data-a="no">Cancelar</button><button class="btn chico pri" type="submit">Guardar</button></form>`;
-  if (S.confirma === 'menuCat') html += `<div class="confirma"><span>¿Qué querés hacer con "${esc(cat.nombre)}"?</span>
-      <button class="btn chico" data-a="pedirRenombrar">Cambiar nombre</button><button class="btn chico dan" data-a="pedirBorrarCat">Borrar</button><button class="btn chico" data-a="no">Cancelar</button></div>`;
-  if (!lista.length) html += `<section class="card"><p class="vacio">Todavía no hay veredictos en ${esc(cat.nombre)}.<br>Tocá <b>Dictar veredicto</b> para cargar el primero.</p></section>`;
-  else html += `<div class="lista">${lista.map((x,i) => {
-      const sub = x.choque ? `No coinciden: ${nota(x.mia)} contra ${nota(x.suya)}` : [x.lugar, fechaLinda(x.fecha)].filter(Boolean).join(' · ');
-      return `<button class="item${i===0 && x.prom!=null ? ' top1' : ''}" data-a="abrir" data-id="${x.id}">
-        <span class="pos num">${x.prom != null ? i+1 : '–'}</span>
-        <span style="min-width:0"><span class="nom" style="display:block">${esc(x.nombre)}</span><span class="sub${x.choque?' choque':''}" style="display:block">${esc(sub) || '&nbsp;'}</span></span>
-        <span class="tarjetas">${tarjeta(x.mia, yo().nombre)}${p2 ? tarjeta(x.suya, p2.nombre) : ''}</span></button>`; }).join('')}</div>`;
+  if (S.confirma === 'cat'){ const t = lista.length + pend.length;
+    html += `<div class="confirma"><span>${t ? `Se van a borrar también ${t === 1 ? 'el veredicto' : `los ${t} veredictos y pendientes`} de esta categoría, para todo el grupo.` : '¿Borrar esta categoría?'}</span>
+      <button class="btn chico" data-a="no">Cancelar</button><button class="btn chico dan" data-a="borrarCat">Sí, borrar</button></div>`; }
+  html += `<div class="vistas" role="tablist"><button role="tab" aria-selected="${S.vista==='rank'}" class="${S.vista==='rank'?'on':''}" data-a="vista" data-v="rank">Ranking (${lista.length})</button>
+      <button role="tab" aria-selected="${S.vista==='pend'}" class="${S.vista==='pend'?'on':''}" data-a="vista" data-v="pend">Pendientes (${pend.length})</button></div>`;
+  if (S.vista === 'pend'){
+    if (!pend.length) html += `<section class="card"><p class="vacio">No hay pendientes en ${esc(cat.nombre)}.<br>Anoten acá lo que quieren probar.</p></section>`;
+    else html += `<div class="lista">${pend.map(x => `<div class="item"><span class="pend" aria-hidden="true"></span>
+        <button class="link" data-a="abrir" data-id="${x.id}" style="text-align:left;color:inherit;min-width:0;font-weight:400"><span class="nom" style="display:block">${esc(x.nombre)}</span><span class="sub" style="display:block">${esc(x.lugar || x.notas || 'Pendiente')}</span></button>
+        <button class="btn chico pri" data-a="yaFuimos" data-id="${x.id}">¡Ya fuimos!</button></div>`).join('')}</div>`;
+  } else {
+    if (!lista.length) html += `<section class="card"><p class="vacio">Todavía no hay veredictos en ${esc(cat.nombre)}.<br>Tocá <b>Dictar veredicto</b> para cargar el primero.</p></section>`;
+    else html += `<div class="lista">${lista.map((x,i) => { const s = subFila(x);
+        return `<button class="item${i===0 && x.prom!=null ? ' top1' : ''}" data-a="abrir" data-id="${x.id}">
+          <span class="pos num">${x.prom != null ? i+1 : '–'}</span>
+          <span style="min-width:0"><span class="nom" style="display:block">${esc(x.nombre)}</span><span class="sub${s.choque?' choque':''}" style="display:block">${esc(s.t) || '&nbsp;'}</span></span>
+          ${notasFila(x)}</button>`; }).join('')}</div>`;
+  }
   m.innerHTML = html;
+}
+
+// La pantalla de desacuerdos (en pareja) o del jurado (en grupo)
+function vistaDesacuerdos(){
+  const cs = comparables().sort((a,b) => b.rango - a.rango);
+  const enPareja = S.miembros.length === 2;
+  const umbral = enPareja ? 3 : 4;
+  const fuertes = cs.filter(x => x.rango >= umbral).slice(0, 15);
+  const nombreCat = id => S.cats.find(c => c.id === id)?.nombre || '';
+  let html = `<button class="volver" data-a="volverRank">‹ Volver</button>`;
+  if (enPareja){
+    html += `<section class="card" style="text-align:center"><p class="eyebrow">Coincidencia</p><h2 style="font-size:56px">${coincidencia()}%</h2>
+      <p style="margin:0;color:var(--muted)">Calculado sobre ${cs.length} ${cs.length===1?'veredicto puntuado':'veredictos puntuados'} por los dos.</p></section>`;
+  } else {
+    const js = jueces().sort((a,b) => a.prom - b.prom);
+    if (js.length >= 2){
+      const ex = js[0], ge = js[js.length - 1];
+      html += `<div class="jurados"><div class="jurado"><span>El más exigente</span><b>${esc(ex.nombre)}</b><span>Pone ${nota(Math.round(ex.prom*10)/10)} en promedio</span></div>
+        <div class="jurado"><span>El más generoso</span><b>${esc(ge.nombre)}</b><span>Pone ${nota(Math.round(ge.prom*10)/10)} en promedio</span></div></div>`;
+    } else html += `<section class="card"><p class="vacio">Cuando cada uno haya puntuado al menos 3 veredictos, acá van a ver quién es el más exigente y quién el más generoso.</p></section>`;
+  }
+  html += `<h2>${enPareja ? 'Donde no coinciden' : 'Los más polémicos'}</h2>`;
+  if (!fuertes.length) html += `<section class="card"><p class="vacio">${enPareja ? 'Por ahora coinciden en todo.' : 'Por ahora no hubo grandes polémicas.'}</p></section>`;
+  else html += `<div class="lista">${fuertes.map(x => `<button class="item" data-a="abrir" data-id="${x.id}">
+      <span class="pos num" style="font-size:16px">${nota(x.rango)}</span>
+      <span style="min-width:0"><span class="nom" style="display:block">${esc(x.nombre)}</span><span class="sub" style="display:block">${esc(nombreCat(x.categoria_id))}</span></span>
+      <span class="tarjetas">${x.notas.filter(n => n.puntaje != null).slice(0, 4).map(n => tarjeta(n.puntaje, n.nombre)).join('')}</span></button>`).join('')}</div>
+    <p class="vacio" style="font-size:13px">El número de la izquierda es la diferencia entre la nota más alta y la más baja.</p>`;
+  return html;
 }
 
 // Muestra una de las tres pantallas: ingreso, bienvenida o la app
@@ -391,39 +543,42 @@ function mostrar(cual){
   $('#login').hidden = cual !== 'login';
   $('#bienvenida').hidden = cual !== 'bienvenida';
   $('#app').hidden = cual !== 'app';
-  $('#pie').hidden = cual !== 'app' || !S.cats.length;
+  $('#pie').hidden = cual !== 'app';
+  if (cual !== 'bienvenida') $('#bForm').innerHTML = '';   // evita tener dos formularios iguales a la vez
   if (cual === 'app') render();
 }
 
 /* =====================================================================
-   7. VENTANA PARA DICTAR O EDITAR UN VEREDICTO
+   7. VENTANAS: veredicto, aspectos, grupos y ajustes
    ===================================================================== */
-let notaHoja = 8;   // la nota que estás eligiendo en la ventana
-function abrirHoja(itemId){
+const H = { nota: 8, asp: {}, aspectos: [], pendiente: false };   // lo que estás eligiendo en la ventana abierta
+
+function abrirHoja(itemId, opciones = {}){
   const x = itemId ? S.items.find(i => i.id === itemId) : null;
-  const n = x ? notasDe(x.id) : {mia:null, suya:null};
   const cat = S.cats.find(c => c.id === (x ? x.categoria_id : S.catSel));
-  const p2 = pareja();
-  notaHoja = n.mia ?? 8;
-  const sinNota = x && n.mia == null;
-  S.confirmaHoja = false;
+  const n = x ? notasDe(x.id) : null;
+  const mia = n ? n.notas[0] : null;
+  H.aspectos = cat.aspectos;
+  H.pendiente = opciones.yaFuimos ? false : (x ? x.pendiente : S.vista === 'pend');
+  H.nota = mia?.puntaje ?? 8;
+  H.asp = {}; H.aspectos.forEach(a => H.asp[a] = mia?.aspectos?.[a] ?? mia?.puntaje ?? 8);
+  const sinNota = x && !x.pendiente && mia?.puntaje == null;
+  const otrasNotas = n ? n.notas.slice(1) : [];
   $('#velo').innerHTML = `<form class="hoja" data-f="item" data-id="${x ? x.id : ''}" role="dialog" aria-modal="true" aria-labelledby="hTit" novalidate>
-    <p class="eyebrow">${esc(cat.nombre)}</p>
-    <h3 id="hTit">${x ? 'Editar veredicto' : 'Nuevo veredicto'}</h3>
+    <p class="eyebrow">${esc(cat.nombre)} · ${esc(grupo().nombre)}</p>
+    <h3 id="hTit">${opciones.yaFuimos ? '¡A dictar veredicto!' : x ? (x.pendiente ? 'Pendiente' : 'Editar veredicto') : 'Nuevo'}</h3>
+    ${!x || x.pendiente ? `<div class="vistas" role="radiogroup" aria-label="Estado"><button type="button" role="radio" data-estado="hecho" class="${H.pendiente?'':'on'}" aria-checked="${!H.pendiente}">Ya fuimos</button>
+      <button type="button" role="radio" data-estado="pend" class="${H.pendiente?'on':''}" aria-checked="${H.pendiente}">Queremos ir</button></div>` : ''}
     <div class="campo"><label for="fNombre">Nombre</label><input type="text" id="fNombre" maxlength="80" value="${esc(x?.nombre)}" placeholder="Ej: Café Tilo"><p class="err" id="eNombre" hidden></p></div>
-    <div class="campo"><label>Tu nota</label>
-      <div class="nota" id="notaCaja"${sinNota ? ' hidden' : ''}>
-        <button type="button" class="paso" data-paso="-0.5" aria-label="Bajar medio punto">−</button>
-        <span class="tarjeta"><b class="num" id="notaNum">${nota(notaHoja)}</b><small>${esc(inicial(yo().nombre))}</small></span>
-        <button type="button" class="paso" data-paso="0.5" aria-label="Subir medio punto">+</button>
-      </div>
-      <input type="range" class="rango" id="fNota" min="1" max="10" step="0.5" value="${notaHoja}" aria-label="Tu nota del 1 al 10"${sinNota ? ' hidden' : ''}>
+    <div class="campo" id="zonaNota"${H.pendiente ? ' hidden' : ''}><label>Tu nota</label>
+      <div id="notaControles"${sinNota ? ' hidden' : ''}>${controlesNota()}</div>
       <label class="sinnota"><input type="checkbox" id="fSinNota"${sinNota ? ' checked' : ''}> Todavía no lo puntué</label>
     </div>
-    ${x && p2 ? `<div class="otro">${tarjeta(n.suya, p2.nombre)}<span>${n.suya != null ? `La nota de ${esc(p2.nombre)}` : `${esc(p2.nombre)} todavía no lo puntuó`}</span></div>` : ''}
+    ${otrasNotas.length && !x.pendiente ? `<div class="notas-de">${otrasNotas.map(o => `<div class="otro">${tarjeta(o.puntaje, o.nombre)}<span style="min-width:0">${o.puntaje != null ? `<b>${esc(o.nombre)}</b>` : `${esc(o.nombre)} todavía no lo puntuó`}
+        ${o.puntaje != null && H.aspectos.length && Object.keys(o.aspectos || {}).length ? `<br><span class="asp-otros">${H.aspectos.filter(a => o.aspectos[a] != null).map(a => `${esc(a)} ${nota(o.aspectos[a])}`).join(' · ')}</span>` : ''}</span></div>`).join('')}</div>` : ''}
     <div class="dos">
       <div class="campo"><label for="fLugar">Lugar o barrio <span style="font-weight:400">(opcional)</span></label><input type="text" id="fLugar" maxlength="80" value="${esc(x?.lugar)}" placeholder="Ej: Palermo"></div>
-      <div class="campo"><label for="fFecha">Fecha</label><input type="date" id="fFecha" value="${x ? (x.fecha || '') : hoy()}" max="${hoy()}"></div>
+      <div class="campo" id="zonaFecha"${H.pendiente ? ' hidden' : ''}><label for="fFecha">Fecha</label><input type="date" id="fFecha" value="${x && x.fecha ? x.fecha : (!x || opciones.yaFuimos ? hoy() : '')}" max="${hoy()}"></div>
     </div>
     <div class="campo"><label for="fLink">Link <span style="font-weight:400">(opcional)</span></label><input type="url" id="fLink" maxlength="300" value="${esc(x?.link)}" placeholder="Google Maps, reseña, tráiler…"></div>
     <div class="campo"><label for="fNotas">Comentarios <span style="font-weight:400">(opcional)</span></label><textarea id="fNotas" maxlength="500" placeholder="Ej: pedir el budín de limón">${esc(x?.notas)}</textarea></div>
@@ -432,16 +587,32 @@ function abrirHoja(itemId){
     <div class="fin">
       ${x ? '<button type="button" class="btn dan" data-a="pedirBorrarItem" style="margin-right:auto">Borrar</button>' : ''}
       <button type="button" class="btn" data-a="cerrar">Cancelar</button>
-      <button type="submit" class="btn pri">${x ? 'Guardar' : 'Dictar veredicto'}</button>
+      <button type="submit" class="btn pri" id="hGuardar">${botonHoja(x)}</button>
     </div>
   </form>`;
   $('#velo').hidden = false;
-  const rango = $('#fNota'), num = $('#notaNum');
-  rango.oninput = () => { notaHoja = Number(rango.value); num.textContent = nota(notaHoja); };
-  $('#fSinNota').onchange = e => { $('#notaCaja').hidden = rango.hidden = e.target.checked; };
+  $('#fSinNota').onchange = e => { $('#notaControles').hidden = e.target.checked; };
   $('#fNombre').oninput = () => $('#eNombre').hidden = true;
+  conectarRango();
   if (!x) setTimeout(() => $('#fNombre').focus(), 60);
 }
+function botonHoja(x){ return H.pendiente ? (x ? 'Guardar' : 'Agregar a pendientes') : (x && !x.pendiente ? 'Guardar' : 'Dictar veredicto'); }
+// Con aspectos: un − y + por aspecto, y la nota general es el promedio. Sin aspectos: una sola nota.
+function controlesNota(){
+  if (!H.aspectos.length) return `<div class="nota">
+      <button type="button" class="paso" data-paso="-0.5" aria-label="Bajar medio punto">−</button>
+      <span class="tarjeta"><b class="num" id="notaNum">${nota(H.nota)}</b><small>${esc(inicial(yo().nombre))}</small></span>
+      <button type="button" class="paso" data-paso="0.5" aria-label="Subir medio punto">+</button></div>
+    <input type="range" class="rango" id="fNota" min="1" max="10" step="0.5" value="${H.nota}" aria-label="Tu nota del 1 al 10">`;
+  return `<div class="nota" style="padding-bottom:0"><span class="tarjeta"><b class="num" id="notaNum">${nota(notaGeneral())}</b><small>${esc(inicial(yo().nombre))}</small></span></div>
+    <p class="vacio" style="font-size:13px;padding:0 0 4px">Tu nota general es el promedio de los aspectos.</p>
+    ${H.aspectos.map((a, i) => `<div class="asp"><span>${esc(a)}</span><span class="ctrl">
+      <button type="button" class="paso chico" data-paso="-0.5" data-asp="${i}" aria-label="Bajar ${esc(a)}">−</button>
+      <span class="val num" id="asp${i}">${nota(H.asp[a])}</span>
+      <button type="button" class="paso chico" data-paso="0.5" data-asp="${i}" aria-label="Subir ${esc(a)}">+</button></span></div>`).join('')}`;
+}
+function notaGeneral(){ const vs = H.aspectos.map(a => H.asp[a]); return medio(vs.reduce((s,v)=>s+v,0) / vs.length); }
+function conectarRango(){ const r = $('#fNota'); if (r) r.oninput = () => { H.nota = Number(r.value); $('#notaNum').textContent = nota(H.nota); }; }
 function cerrarHoja(){ $('#velo').hidden = true; $('#velo').innerHTML = ''; }
 
 async function guardarItem(form){
@@ -451,64 +622,101 @@ async function guardarItem(form){
   if (link && !/^https?:\/\//i.test(link)) link = 'https://' + link;
   const id = form.dataset.id || nuevoId();
   const previo = S.items.find(i => i.id === id);
-  const fila = { id, categoria_id: previo ? previo.categoria_id : S.catSel, nombre,
-    lugar: $('#fLugar').value.trim() || null, link: link || null, notas: $('#fNotas').value.trim() || null, fecha: $('#fFecha').value || null };
-  const miNota = $('#fSinNota').checked ? null : notaHoja;
+  const fila = { id, categoria_id: previo ? previo.categoria_id : S.catSel, nombre, pendiente: H.pendiente,
+    lugar: $('#fLugar').value.trim() || null, link: link || null, notas: $('#fNotas').value.trim() || null,
+    fecha: H.pendiente ? null : ($('#fFecha').value || null) };
+  let miNota;   // undefined = no tocar la nota (pendientes)
+  if (!H.pendiente){
+    if ($('#fSinNota').checked) miNota = null;
+    else if (H.aspectos.length) miNota = { puntaje: notaGeneral(), aspectos: {...H.asp} };
+    else miNota = { puntaje: H.nota, aspectos: {} };
+  }
   cerrarHoja();
-  await seguro(() => db.guardarItem(fila, miNota), previo ? 'Veredicto actualizado' : 'Veredicto dictado');
+  const eraPend = previo?.pendiente;
+  const ok = await seguro(() => db.guardarItem(fila, miNota),
+    H.pendiente ? (previo ? 'Pendiente guardado' : 'Agregado a pendientes') : (previo && !eraPend ? 'Veredicto actualizado' : 'Veredicto dictado'));
+  if (ok && eraPend && !H.pendiente){ S.vista = 'rank'; render(); }
 }
 
-/* Ajustes: mi nombre, el código del espacio, apariencia y cerrar sesión */
+// Editar los aspectos de una categoría
+let aspEdit = [];
+function abrirAspectos(){
+  const cat = catActual();
+  aspEdit = [...cat.aspectos];
+  S.confirma = null; render();
+  $('#velo').innerHTML = `<form class="hoja" data-f="aspectos" role="dialog" aria-modal="true" aria-labelledby="asTit" novalidate>
+    <p class="eyebrow">${esc(cat.nombre)}</p><h3 id="asTit">Aspectos</h3>
+    <p style="margin:0;color:var(--muted);font-size:14px">Cada uno pone una nota a cada aspecto, y la nota general es el promedio. Sin aspectos, se pone una sola nota. Las notas que ya pusieron no cambian.</p>
+    <div id="listaAsp" style="display:flex;flex-direction:column;gap:8px"></div>
+    <div class="editor-asp"><input type="text" id="nuevoAsp" maxlength="24" placeholder="Agregar aspecto (ej: Música)"><button type="button" class="btn" data-a="agregarAsp">Agregar</button></div>
+    ${aspectosSugeridos(cat.nombre).length ? `<div style="display:flex;flex-wrap:wrap;gap:8px">${aspectosSugeridos(cat.nombre).map(a => `<button type="button" class="cat" data-sugasp="${esc(a)}">+ ${esc(a)}</button>`).join('')}</div>` : ''}
+    <div class="fin"><button type="button" class="btn" data-a="cerrar">Cancelar</button><button type="submit" class="btn pri">Guardar</button></div></form>`;
+  $('#velo').hidden = false;
+  dibujarAspectos();
+}
+function dibujarAspectos(){
+  $('#listaAsp').innerHTML = aspEdit.length ? aspEdit.map((a, i) => `<div class="editor-asp"><input type="text" data-iasp="${i}" value="${esc(a)}" maxlength="24" aria-label="Aspecto ${i+1}"><button type="button" class="quitar" data-a="quitarAsp" data-i="${i}" aria-label="Quitar ${esc(a)}">×</button></div>`).join('')
+    : '<p class="vacio" style="font-size:14px">Sin aspectos: se pone una sola nota.</p>';
+  $('#listaAsp').querySelectorAll('[data-iasp]').forEach(inp => inp.oninput = () => aspEdit[Number(inp.dataset.iasp)] = inp.value);
+}
+function sumarAspecto(v){
+  v = (v || '').trim(); if (!v || aspEdit.some(a => a.toLowerCase() === v.toLowerCase())) return;
+  aspEdit.push(v); dibujarAspectos();
+}
+
+// Grupos: cambiar de grupo, crear otro o unirse con un código
+function abrirGrupos(){
+  $('#velo').innerHTML = `<div class="hoja" role="dialog" aria-modal="true" aria-labelledby="gTit">
+    <h3 id="gTit">Tus grupos</h3>
+    <div class="grupos">${S.grupos.map(g => { const n = S.todosMiembros.filter(m => m.espacio_id === g.id).length;
+      return `<button type="button" class="grupo${g.id===S.grupoSel?' on':''}" data-a="elegirGrupo" data-id="${g.id}"><span style="min-width:0"><b style="display:block">${esc(g.nombre)}</b><span>${n} ${n===1?'persona':'personas'}</span></span>${g.id===S.grupoSel?'<span aria-hidden="true">✓</span>':''}</button>`; }).join('')}</div>
+    <div id="gForm"></div>
+    <div class="fin" id="gBotones"><button type="button" class="btn" data-a="cerrar">Cerrar</button><button type="button" class="btn" data-a="formUnirse">Unirme con un código</button><button type="button" class="btn pri" data-a="formCrear">Crear grupo</button></div>
+  </div>`;
+  $('#velo').hidden = false;
+}
+// El formulario para crear un grupo o unirse (se usa en la bienvenida y en "Tus grupos")
+function formGrupo(dondeEl, modo, bienvenida){
+  const miNombre = S.listo ? yo().nombre : '';
+  dondeEl.innerHTML = `<form data-f="grupo" data-modo="${modo}" style="display:flex;flex-direction:column;gap:14px" novalidate>
+    ${bienvenida ? `<div class="opciones" role="radiogroup" aria-label="¿Qué querés hacer?">
+      <button type="button" class="opcion${modo==='crear'?' on':''}" data-a="modoGrupo" data-modo="crear" role="radio" aria-checked="${modo==='crear'}"><b>Crear un grupo</b><span>Para puntuar con tu pareja, tus amigos o un viaje. Te damos un código para invitar.</span></button>
+      <button type="button" class="opcion${modo==='unirse'?' on':''}" data-a="modoGrupo" data-modo="unirse" role="radio" aria-checked="${modo==='unirse'}"><b>Tengo un código</b><span>Alguien ya creó el grupo y te pasó su código.</span></button></div>` : `<p class="eyebrow">${modo==='crear' ? 'Nuevo grupo' : 'Unirme a un grupo'}</p>`}
+    <div class="campo"><label for="gMiNombre">Tu nombre en este grupo</label><input type="text" id="gMiNombre" maxlength="30" value="${esc(miNombre)}" placeholder="Así te van a ver los demás" autocomplete="given-name"></div>
+    ${modo === 'crear'
+      ? `<div class="campo"><label for="gNombre">Nombre del grupo</label><input type="text" id="gNombre" maxlength="40" placeholder="Ej: Pareja, Viaje a Europa, Asado de los jueves"></div>`
+      : `<div class="campo"><label for="gCodigo">Código</label><input type="text" id="gCodigo" maxlength="12" placeholder="Ej: A1B2C3D4" autocomplete="off" style="text-transform:uppercase;letter-spacing:.1em"></div>`}
+    <p class="err" id="gErr" hidden></p>
+    <button type="submit" class="btn pri" id="gListo" style="${bienvenida ? 'width:100%;height:48px' : ''}">${modo === 'crear' ? 'Crear grupo' : 'Unirme'}</button>
+  </form>`;
+}
+
+// Ajustes del grupo actual
 function abrirAjustes(){
-  const p2 = pareja();
+  const g = grupo();
   $('#velo').innerHTML = `<form class="hoja" data-f="ajustes" role="dialog" aria-modal="true" aria-labelledby="aTit" novalidate>
     <h3 id="aTit">Ajustes</h3>
-    <div class="campo"><label for="aNombre">Tu nombre</label><input type="text" id="aNombre" maxlength="30" value="${esc(yo().nombre)}"></div>
-    <div class="campo"><label>Código del espacio</label>
-      <div class="otro" style="justify-content:space-between"><span class="codigo">${esc(S.espacio.codigo)}</span><button type="button" class="btn chico" data-a="copiar">Copiar</button></div>
-      <span style="font-size:13px;color:var(--muted)">${p2 ? `Compartís este espacio con ${esc(p2.nombre)}.` : 'Todavía no se unió nadie. Pasale este código a tu pareja.'}</span></div>
+    <div class="campo"><label for="aGrupo">Nombre del grupo</label><input type="text" id="aGrupo" maxlength="40" value="${esc(g.nombre)}"></div>
+    <div class="campo"><label for="aNombre">Tu nombre en este grupo</label><input type="text" id="aNombre" maxlength="30" value="${esc(yo().nombre)}"></div>
+    <div class="campo"><label>Código para invitar</label>
+      <div class="otro" style="justify-content:space-between;flex-wrap:wrap"><span class="codigo" id="aCodigo">${esc(g.codigo)}</span>
+        <span style="display:flex;gap:6px"><button type="button" class="btn chico" data-a="copiar">Copiar</button>${soyCreador() ? '<button type="button" class="btn chico" data-a="pedirCodigo">Cambiar código</button>' : ''}</span></div>
+      <div id="zonaCodigo"></div>
+      <span style="font-size:13px;color:var(--muted)">Cualquiera con este código puede sumarse al grupo.</span></div>
+    <div class="campo"><label>Integrantes (${S.miembros.length})</label><div>${S.miembros.map(m => `<div class="miembro"><span>${esc(m.nombre)}${m.user_id===S.yo?'<span class="etiqueta">Vos</span>':''}${m.user_id===g.creado_por?'<span class="etiqueta">Creador</span>':''}</span>
+        ${soyCreador() && m.user_id !== S.yo ? `<button type="button" class="btn chico dan" data-a="pedirSacar" data-id="${m.user_id}">Sacar</button>` : ''}</div>
+        <div id="zonaSacar-${m.user_id}"></div>`).join('')}</div></div>
     <div class="campo"><label>Apariencia</label><div class="tema" style="align-self:flex-start" role="group" aria-label="Apariencia"><button type="button" data-tema="auto">Auto</button><button type="button" data-tema="claro">Claro</button><button type="button" data-tema="oscuro">Oscuro</button></div></div>
+    <div id="zonaSalir"></div>
     <div class="fin">
-      <button type="button" class="btn dan" data-a="salir" style="margin-right:auto">Cerrar sesión</button>
-      <button type="button" class="btn" data-a="cerrar">Cancelar</button>
+      <button type="button" class="btn dan" data-a="pedirSalirGrupo" style="margin-right:auto">Salir del grupo</button>
+      <button type="button" class="btn" data-a="salir">Cerrar sesión</button>
       <button type="submit" class="btn pri">Guardar</button>
     </div></form>`;
   $('#velo').hidden = false;
   aplicarTema(temaGuardado);
 }
 
-/* =====================================================================
-   8. CLICS Y FORMULARIOS
-   ===================================================================== */
-document.addEventListener('click', async e => {
-  if (e.target.id === 'velo'){ cerrarHoja(); return; }
-  const paso = e.target.closest('[data-paso]');
-  if (paso){ notaHoja = Math.min(10, Math.max(1, notaHoja + Number(paso.dataset.paso))); $('#fNota').value = notaHoja; $('#notaNum').textContent = nota(notaHoja); return; }
-  const b = e.target.closest('[data-a]'); if (!b) return;
-  const a = b.dataset.a, id = b.dataset.id;
-  if (a === 'cat'){ S.catSel = id; S.confirma = null; render(); }
-  else if (a === 'nuevaCat'){ S.confirma = null; abrirNuevaCat(); }
-  else if (a === 'sugerida') await seguro(() => db.crearCat(b.dataset.n));
-  else if (a === 'editarCat'){ S.confirma = S.confirma === 'menuCat' ? null : 'menuCat'; render(); }
-  else if (a === 'pedirRenombrar'){ S.confirma = 'renombrar'; render(); const i=$('#inRenombrar'); i.focus(); i.select(); }
-  else if (a === 'pedirBorrarCat'){ S.confirma = 'cat'; render(); }
-  else if (a === 'borrarCat'){ const n = S.cats.find(c => c.id === S.catSel).nombre; S.confirma = null; await seguro(() => db.borrarCat(S.catSel), 'Borraste ' + n); }
-  else if (a === 'no'){ S.confirma = null; render(); }
-  else if (a === 'nuevo') abrirHoja(null);
-  else if (a === 'abrir') abrirHoja(id);
-  else if (a === 'cerrar') cerrarHoja();
-  else if (a === 'pedirBorrarItem'){
-    $('#zonaBorrar').innerHTML = `<div class="confirma"><span>¿Borrar este veredicto y las notas de los dos?</span>
-      <button type="button" class="btn chico" data-a="noBorrarItem">No</button><button type="button" class="btn chico dan" data-a="borrarItem">Sí, borrar</button></div>`; }
-  else if (a === 'noBorrarItem') $('#zonaBorrar').innerHTML = '';
-  else if (a === 'borrarItem'){ const id2 = $('.hoja').dataset.id; cerrarHoja(); await seguro(() => db.borrarItem(id2), 'Veredicto borrado'); }
-  else if (a === 'ajustes') abrirAjustes();
-  else if (a === 'copiar'){
-    try { await navigator.clipboard.writeText(S.espacio.codigo); toast('Código copiado'); }
-    catch(err){ toast('Código: ' + S.espacio.codigo); }
-  }
-  else if (a === 'salir'){ cerrarHoja(); sb.auth.signOut(); }
-});
 function abrirNuevaCat(){
   $('#velo').innerHTML = `<form class="hoja" data-f="nuevaCat" role="dialog" aria-modal="true" aria-labelledby="cTit" novalidate>
     <h3 id="cTit">Nueva categoría</h3>
@@ -519,47 +727,119 @@ function abrirNuevaCat(){
   $('#velo').querySelectorAll('[data-sug]').forEach(b => b.onclick = () => { $('#cNombre').value = b.dataset.sug; });
   setTimeout(() => $('#cNombre').focus(), 60);
 }
+
+/* =====================================================================
+   8. CLICS Y FORMULARIOS
+   ===================================================================== */
+document.addEventListener('click', async e => {
+  if (e.target.id === 'velo'){ cerrarHoja(); return; }
+  // Botones − y + de la nota (general o de un aspecto)
+  const paso = e.target.closest('[data-paso]');
+  if (paso){
+    const d = Number(paso.dataset.paso), lim = v => Math.min(10, Math.max(1, v));
+    if (paso.dataset.asp != null){ const a = H.aspectos[Number(paso.dataset.asp)]; H.asp[a] = lim(H.asp[a] + d); $('#asp' + paso.dataset.asp).textContent = nota(H.asp[a]); $('#notaNum').textContent = nota(notaGeneral()); }
+    else { H.nota = lim(H.nota + d); $('#fNota').value = H.nota; $('#notaNum').textContent = nota(H.nota); }
+    return;
+  }
+  // "Ya fuimos" / "Queremos ir" dentro de la ventana
+  const est = e.target.closest('[data-estado]');
+  if (est){
+    H.pendiente = est.dataset.estado === 'pend';
+    document.querySelectorAll('[data-estado]').forEach(b => { b.classList.toggle('on', b === est); b.setAttribute('aria-checked', b === est); });
+    $('#zonaNota').hidden = $('#zonaFecha').hidden = H.pendiente;
+    $('#hGuardar').textContent = botonHoja(S.items.find(i => i.id === $('.hoja').dataset.id));
+    return;
+  }
+  const sugAsp = e.target.closest('[data-sugasp]'); if (sugAsp){ sumarAspecto(sugAsp.dataset.sugasp); return; }
+  const b = e.target.closest('[data-a]'); if (!b) return;
+  const a = b.dataset.a, id = b.dataset.id;
+  if (a === 'cat'){ S.catSel = id; S.confirma = null; if (S.vista === 'desac') S.vista = 'rank'; render(); }
+  else if (a === 'vista'){ S.vista = b.dataset.v; S.confirma = null; render(); }
+  else if (a === 'desac'){ S.vista = 'desac'; render(); scrollTo(0,0); }
+  else if (a === 'volverRank'){ S.vista = 'rank'; render(); }
+  else if (a === 'nuevaCat'){ S.confirma = null; abrirNuevaCat(); }
+  else if (a === 'sugerida') await seguro(() => db.crearCat(b.dataset.n));
+  else if (a === 'editarCat'){ S.confirma = S.confirma === 'menuCat' ? null : 'menuCat'; render(); }
+  else if (a === 'aspectos') abrirAspectos();
+  else if (a === 'agregarAsp'){ sumarAspecto($('#nuevoAsp').value); $('#nuevoAsp').value = ''; $('#nuevoAsp').focus(); }
+  else if (a === 'quitarAsp'){ aspEdit.splice(Number(b.dataset.i), 1); dibujarAspectos(); }
+  else if (a === 'pedirRenombrar'){ S.confirma = 'renombrar'; render(); const i=$('#inRenombrar'); i.focus(); i.select(); }
+  else if (a === 'pedirBorrarCat'){ S.confirma = 'cat'; render(); }
+  else if (a === 'borrarCat'){ const n = catActual().nombre; S.confirma = null; await seguro(() => db.borrarCat(S.catSel), 'Borraste ' + n); }
+  else if (a === 'no'){ S.confirma = null; render(); }
+  else if (a === 'nuevo') abrirHoja(null);
+  else if (a === 'abrir') abrirHoja(id);
+  else if (a === 'yaFuimos') abrirHoja(id, {yaFuimos:true});
+  else if (a === 'cerrar') cerrarHoja();
+  else if (a === 'pedirBorrarItem'){
+    $('#zonaBorrar').innerHTML = `<div class="confirma"><span>¿Borrar esto y las notas de todo el grupo?</span>
+      <button type="button" class="btn chico" data-a="noBorrarItem">No</button><button type="button" class="btn chico dan" data-a="borrarItem">Sí, borrar</button></div>`; }
+  else if (a === 'noBorrarItem') $('#zonaBorrar').innerHTML = '';
+  else if (a === 'borrarItem'){ const id2 = $('.hoja').dataset.id; cerrarHoja(); await seguro(() => db.borrarItem(id2), 'Borrado'); }
+  // Grupos
+  else if (a === 'grupos') abrirGrupos();
+  else if (a === 'elegirGrupo'){ cerrarHoja(); if (id !== S.grupoSel){ S.grupoSel = id; S.catSel = null; S.vista = 'rank'; S.confirma = null; recordarGrupo(id); await seguro(() => db.cargar()); } }
+  else if (a === 'formCrear' || a === 'formUnirse'){ $('#gBotones').hidden = true; formGrupo($('#gForm'), a === 'formCrear' ? 'crear' : 'unirse', false); setTimeout(() => { const n = $('#gMiNombre'); if (!n) return; (n.value ? ($('#gNombre') || $('#gCodigo')) : n).focus(); }, 60); }
+  else if (a === 'modoGrupo'){ const nom = $('#gMiNombre').value; formGrupo($('#bForm'), b.dataset.modo, true); $('#gMiNombre').value = nom; }
+  // Ajustes
+  else if (a === 'ajustes') abrirAjustes();
+  else if (a === 'copiar'){
+    try { await navigator.clipboard.writeText(grupo().codigo); toast('Código copiado'); }
+    catch(err){ toast('Código: ' + grupo().codigo); }
+  }
+  else if (a === 'pedirCodigo') $('#zonaCodigo').innerHTML = `<div class="confirma"><span>El código actual va a dejar de funcionar. Los que ya están en el grupo no se ven afectados.</span>
+      <button type="button" class="btn chico" data-a="noCodigo">Cancelar</button><button type="button" class="btn chico pri" data-a="cambiarCodigo">Cambiar</button></div>`;
+  else if (a === 'noCodigo') $('#zonaCodigo').innerHTML = '';
+  else if (a === 'cambiarCodigo'){ await seguro(async () => { const c = await db.rpc('cambiar_codigo', {e:S.grupoSel}); grupo().codigo = c; $('#aCodigo').textContent = c; $('#zonaCodigo').innerHTML = ''; render(); }, 'Código cambiado'); }
+  else if (a === 'pedirSacar'){ const m = S.miembros.find(x => x.user_id === id);
+    $('#zonaSacar-' + id).innerHTML = `<div class="confirma" style="margin:6px 0"><span>¿Sacar a ${esc(m.nombre)}? También se borran sus notas en este grupo.</span>
+      <button type="button" class="btn chico" data-a="noSacar" data-id="${id}">Cancelar</button><button type="button" class="btn chico dan" data-a="sacar" data-id="${id}">Sacar</button></div>`; }
+  else if (a === 'noSacar') $('#zonaSacar-' + id).innerHTML = '';
+  else if (a === 'sacar'){ const n = S.miembros.find(x => x.user_id === id).nombre; cerrarHoja(); await seguro(async () => { await db.rpc('sacar_miembro', {e:S.grupoSel, u:id}); await db.cargar(); }, `Sacaste a ${n} del grupo`); }
+  else if (a === 'pedirSalirGrupo') $('#zonaSalir').innerHTML = `<div class="confirma"><span>¿Salir de "${esc(grupo().nombre)}"? Se borran tus notas en este grupo. Para volver, vas a necesitar el código.</span>
+      <button type="button" class="btn chico" data-a="noSalirGrupo">Cancelar</button><button type="button" class="btn chico dan" data-a="salirGrupo">Salir</button></div>`;
+  else if (a === 'noSalirGrupo') $('#zonaSalir').innerHTML = '';
+  else if (a === 'salirGrupo'){ const n = grupo().nombre; cerrarHoja(); await seguro(async () => { await db.rpc('salir_del_grupo', {e:S.grupoSel}); S.grupoSel = null; await db.cargar(); }, `Saliste de ${n}`); }
+  else if (a === 'salir'){ cerrarHoja(); sb.auth.signOut(); }
+});
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape' && !$('#velo').hidden) cerrarHoja();
+  if (e.key === 'Enter' && e.target.id === 'nuevoAsp'){ e.preventDefault(); sumarAspecto(e.target.value); e.target.value = ''; }
+});
 document.addEventListener('submit', async e => {
   const f = e.target, t = f.dataset.f; if (!t) return;
   e.preventDefault();
   if (t === 'item') guardarItem(f);
   else if (t === 'nuevaCat'){ const v = $('#cNombre').value; if (!v.trim()) return; cerrarHoja(); await seguro(() => db.crearCat(v), 'Categoría creada'); }
-  else if (t === 'renombrar'){ const v = $('#inRenombrar').value.trim().replace(/\s+/g,' '); if (!v) return; S.confirma = null; await seguro(() => db.renombrarCat(S.catSel, v), 'Nombre cambiado'); }
-  else if (t === 'ajustes'){ const v = $('#aNombre').value.trim(); cerrarHoja(); if (v && v !== yo().nombre) await seguro(() => db.cambiarNombre(v), 'Nombre guardado'); }
+  else if (t === 'renombrar'){ const v = $('#inRenombrar').value.trim().replace(/\s+/g,' '); if (!v) return; S.confirma = null; await seguro(() => db.editarCat(S.catSel, {nombre:v}), 'Nombre cambiado'); }
+  else if (t === 'aspectos'){ const lista = [...new Set(aspEdit.map(a => a.trim()).filter(Boolean))]; cerrarHoja(); await seguro(() => db.editarCat(S.catSel, {aspectos:lista}), 'Aspectos guardados'); }
+  else if (t === 'ajustes'){
+    const ng = $('#aGrupo').value.trim(), nn = $('#aNombre').value.trim(); cerrarHoja();
+    if (ng && ng !== grupo().nombre) await seguro(async () => { await db.rpc('renombrar_grupo', {e:S.grupoSel, nuevo_nombre:ng}); grupo().nombre = ng; render(); }, 'Grupo renombrado');
+    if (nn && nn !== yo().nombre) await seguro(() => db.cambiarMiNombre(nn), 'Nombre guardado');
+  }
+  else if (t === 'grupo'){
+    const modo = f.dataset.modo, nombre = $('#gMiNombre').value.trim();
+    const err = x => { $('#gErr').textContent = x; $('#gErr').hidden = false; };
+    if (!nombre) return err('Escribí tu nombre.');
+    if (modo === 'unirse' && !$('#gCodigo').value.trim()) return err('Escribí el código que te pasaron.');
+    $('#gListo').disabled = true;
+    try {
+      S.grupoSel = modo === 'crear'
+        ? await db.rpc('crear_espacio', {mi_nombre:nombre, nombre_grupo:$('#gNombre').value.trim()})
+        : await db.rpc('unirse_espacio', {cod:$('#gCodigo').value.trim(), mi_nombre:nombre});
+      recordarGrupo(S.grupoSel); S.catSel = null; S.vista = 'rank';
+      cerrarHoja(); await db.cargar();
+      toast(modo === 'crear' ? 'Grupo creado' : '¡Te sumaste al grupo!');
+    } catch(e2){ console.error(e2); err(e2.message || 'No se pudo. Probá de nuevo.'); }
+    finally { const btn = $('#gListo'); if (btn) btn.disabled = false; }
+  }
 });
-document.addEventListener('keydown', e => { if (e.key === 'Escape' && !$('#velo').hidden) cerrarHoja(); });
-// Al volver a la app (por ejemplo, después de que tu pareja cargó algo), se actualiza sola
-document.addEventListener('visibilitychange', () => { if (!document.hidden && S.listo) db.cargar().catch(console.error); });
+// Al volver a la app (por ejemplo, después de que alguien del grupo cargó algo), se actualiza sola
+document.addEventListener('visibilitychange', () => { if (!document.hidden && S.listo && $('#velo').hidden) db.cargar().catch(console.error); });
 
 /* =====================================================================
-   9. BIENVENIDA: crear el espacio o unirse con un código
-   ===================================================================== */
-let modoBienvenida = 'crear';
-document.querySelectorAll('[data-modo]').forEach(b => b.onclick = () => {
-  modoBienvenida = b.dataset.modo;
-  document.querySelectorAll('[data-modo]').forEach(o => { o.classList.toggle('on', o === b); o.setAttribute('aria-checked', o === b); });
-  $('#bCampoCodigo').hidden = modoBienvenida !== 'unirse';
-  $('#bListo').textContent = modoBienvenida === 'unirse' ? 'Unirme' : 'Crear espacio';
-  $('#bErr').hidden = true;
-  if (modoBienvenida === 'unirse') $('#bCodigo').focus();
-});
-$('#bienvenida').addEventListener('submit', async e => {
-  e.preventDefault();
-  const nombre = $('#bNombre').value.trim(), cod = $('#bCodigo').value.trim();
-  const err = t => { $('#bErr').textContent = t; $('#bErr').hidden = false; };
-  if (!nombre) return err('Escribí tu nombre.');
-  if (modoBienvenida === 'unirse' && !cod) return err('Escribí el código que te pasaron.');
-  $('#bListo').disabled = true;
-  const { error } = modoBienvenida === 'unirse'
-    ? await sb.rpc('unirse_espacio', { cod, mi_nombre: nombre })
-    : await sb.rpc('crear_espacio', { mi_nombre: nombre });
-  $('#bListo').disabled = false;
-  if (error) return err(error.message || 'No se pudo. Probá de nuevo.');
-  await db.cargar().catch(e2 => { console.error(e2); err('No se pudieron cargar los datos. Recargá la página.'); });
-});
-
-/* =====================================================================
-   10. INICIAR SESIÓN Y CREAR CUENTA
+   9. INICIAR SESIÓN Y CREAR CUENTA
    ===================================================================== */
 const MENSAJES = {
   'Invalid login credentials': 'El email o la contraseña no coinciden.',
@@ -611,7 +891,7 @@ document.addEventListener('click', e => {
 
 /* Al abrir: si hay sesión, cargar los datos; si no, mostrar el ingreso */
 sb.auth.onAuthStateChange((_evento, sesion) => setTimeout(() => {
-  if (!sesion){ Object.assign(S, {yo:null, espacio:null, miembros:[], cats:[], items:[], puntajes:[], listo:false}); mostrar('login'); return; }
+  if (!sesion){ Object.assign(S, {yo:null, grupos:[], todosMiembros:[], miembros:[], cats:[], items:[], puntajes:[], listo:false}); mostrar('login'); return; }
   if (S.yo === sesion.user.id && S.listo) return;
   S.yo = sesion.user.id;
   db.cargar().catch(e => { console.error(e); mostrar('app'); $('#main').innerHTML = '<div class="card"><p class="vacio">No se pudieron cargar los datos. Revisá tu conexión y recargá la página.</p></div>'; });
