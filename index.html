@@ -5,6 +5,9 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>Veredicto</title>
 <meta name="theme-color" content="#F6F1E7">
+<link rel="icon" type="image/png" href="favicon.png">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="manifest" href="manifest.json">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Gloock&family=Figtree:wght@400;500;600;700&display=swap">
@@ -71,7 +74,7 @@ input:focus,textarea:focus{border-color:var(--accent);outline:none}
 .marca{display:flex;flex-direction:column;align-items:center;text-align:center;gap:8px;margin-bottom:8px}
 .marca h1{font-size:48px;line-height:1}
 .marca p{margin:0;color:var(--muted);max-width:30ch}
-.sello{width:72px;height:72px}
+.sello{width:88px;height:88px;border-radius:22px}
 .pass{position:relative}
 .pass input{padding-right:84px}
 .ver{position:absolute;right:6px;top:50%;transform:translateY(-50%);height:32px;padding:0 10px;border:0;border-radius:8px;background:transparent;color:var(--accent);font-weight:600;font-size:13px}
@@ -199,18 +202,10 @@ header.top h1{font-size:34px;line-height:1}
 </head>
 <body>
 
-<!-- El sello de Veredicto: lo usamos en la portada -->
-<template id="tplSello">
-  <svg class="sello" viewBox="0 0 72 72" aria-hidden="true">
-    <circle cx="36" cy="36" r="34" style="fill:var(--accent)"/>
-    <circle cx="36" cy="36" r="28" fill="none" style="stroke:var(--accent-ink)" stroke-width="1.5" stroke-dasharray="3 3"/>
-    <text x="36" y="47" text-anchor="middle" font-family="Gloock, Georgia, serif" font-size="32" style="fill:var(--accent-ink)">10</text>
-  </svg>
-</template>
 
 <!-- ============ PANTALLA DE INGRESO ============ -->
 <form id="login" class="portada" hidden novalidate>
-  <div class="marca"><span class="lugar-sello"></span><h1>Veredicto</h1><p>Cafés, cenas y películas, puntuados en grupo.</p></div>
+  <div class="marca"><img src="logo.png" alt="Logo de Veredicto" class="sello"><h1>Veredicto</h1><p>Cafés, cenas y películas, puntuados en grupo.</p></div>
   <div class="campo"><label for="lEmail">Email</label><input type="email" id="lEmail" autocomplete="email" placeholder="tu@email.com"></div>
   <div class="campo"><label for="lPass">Contraseña</label>
     <div class="pass"><input type="password" id="lPass" autocomplete="current-password"><button type="button" class="ver" id="lVer">Mostrar</button></div>
@@ -223,7 +218,7 @@ header.top h1{font-size:34px;line-height:1}
 
 <!-- ============ BIENVENIDA: tu primer grupo ============ -->
 <div id="bienvenida" class="portada" hidden>
-  <div class="marca"><span class="lugar-sello"></span><h1>Bienvenido</h1><p>Primero, armá tu primer grupo, o sumate al de alguien con su código.</p></div>
+  <div class="marca"><img src="logo.png" alt="Logo de Veredicto" class="sello"><h1>Bienvenido</h1><p>Primero, armá tu primer grupo, o sumate al de alguien con su código.</p></div>
   <div id="bForm"></div>
   <p class="cambiar"><button type="button" class="link" data-a="salir">Cerrar sesión</button></p>
 </div>
@@ -307,7 +302,6 @@ const catActual = () => S.cats.find(c => c.id === S.catSel);
 function aspectosSugeridos(nombre){ return ASPECTOS_SUG[sinTildes(nombre).trim()] || []; }
 function recordarGrupo(id){ try { localStorage.setItem('veredicto-grupo', id); } catch(e){} }
 function grupoRecordado(){ try { return localStorage.getItem('veredicto-grupo'); } catch(e){ return null; } }
-document.querySelectorAll('.lugar-sello').forEach(el => el.innerHTML = $('#tplSello').innerHTML);
 
 /* =====================================================================
    4. BASE DE DATOS: leer y guardar en Supabase
