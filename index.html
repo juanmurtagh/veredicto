@@ -1,0 +1,621 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Veredicto</title>
+<meta name="theme-color" content="#F6F1E7">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Gloock&family=Figtree:wght@400;500;600;700&display=swap">
+
+<!-- Librería oficial de Supabase: le da a la página las funciones para hablar con la base de datos -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
+
+<style>
+/* ============ COLORES Y TIPOGRAFÍAS ============
+   Crema y rojo vino. Todos los colores están definidos acá una sola vez. */
+:root{
+  --bg:#F6F1E7; --surface:#FFFBF2; --soft:#EFE6D6; --ink:#2A1F1C; --muted:#75665D; --line:#E7DCC8;
+  --accent:#8E1B2A; --accent-ink:#FFFBF2; --off:#DCCDB4; --off-ink:#5A4A40; --danger:#B3261E;
+  --display:'Gloock',Georgia,'Times New Roman',serif;
+  --body:'Figtree',system-ui,-apple-system,'Segoe UI',sans-serif;
+  --r:14px;
+}
+/* Modo oscuro automático (si el celular está en oscuro y no elegiste "Claro") */
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#161112; --surface:#201819; --soft:#2C2223; --ink:#F3E9DA; --muted:#A8978A; --line:#352A2A;
+  --accent:#D4566A; --accent-ink:#1A0E10; --off:#3E3132; --off-ink:#C9B8A8; --danger:#F08A80;
+  color-scheme:dark}}
+/* Modo oscuro elegido a mano (mismos colores que arriba) */
+:root[data-theme="dark"]{
+  --bg:#161112; --surface:#201819; --soft:#2C2223; --ink:#F3E9DA; --muted:#A8978A; --line:#352A2A;
+  --accent:#D4566A; --accent-ink:#1A0E10; --off:#3E3132; --off-ink:#C9B8A8; --danger:#F08A80;
+  color-scheme:dark}
+
+*{box-sizing:border-box}
+html{padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--body);font-size:15px;line-height:1.5;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:0 120px}
+[hidden]{display:none!important}
+button,input,select,textarea{font:inherit;color:inherit}
+button{cursor:pointer}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.num{font-variant-numeric:tabular-nums}
+.wrap{max-width:600px;margin:0 auto;display:flex;flex-direction:column;gap:18px}
+h1,h2,h3{font-family:var(--display);font-weight:400;margin:0;letter-spacing:-.01em;text-wrap:balance}
+.eyebrow{font-size:12px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin:0}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:18px}
+.vacio{text-align:center;color:var(--muted);margin:0;padding:8px 0}
+.err{font-size:13px;color:var(--danger);margin:0}
+
+/* ============ BOTONES Y CAMPOS ============ */
+.btn{height:44px;padding:0 16px;border-radius:12px;border:1px solid var(--line);background:var(--surface);font-weight:600;white-space:nowrap}
+.btn:hover{background:var(--soft)}
+.btn.pri{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+.btn.pri:hover{filter:brightness(1.08)}
+.btn.dan{color:var(--danger)}
+.btn.chico{height:34px;padding:0 12px;font-size:13px}
+.btn:disabled{opacity:.6;cursor:wait}
+.link{background:none;border:0;padding:0;color:var(--accent);font-weight:600}
+.campo{display:flex;flex-direction:column;gap:6px}
+.campo label{font-size:13px;font-weight:600;color:var(--muted)}
+input[type=text],input[type=email],input[type=password],input[type=date],input[type=url],textarea{
+  width:100%;min-height:44px;border:1px solid var(--line);border-radius:10px;background:var(--bg);padding:10px 12px}
+textarea{resize:vertical;min-height:70px}
+input:focus,textarea:focus{border-color:var(--accent);outline:none}
+.dos{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px}
+
+/* ============ PANTALLA DE INGRESO Y BIENVENIDA ============ */
+.portada{max-width:400px;margin:9vh auto 0;display:flex;flex-direction:column;gap:14px}
+.marca{display:flex;flex-direction:column;align-items:center;text-align:center;gap:8px;margin-bottom:8px}
+.marca h1{font-size:48px;line-height:1}
+.marca p{margin:0;color:var(--muted);max-width:30ch}
+.sello{width:72px;height:72px}
+.pass{position:relative}
+.pass input{padding-right:84px}
+.ver{position:absolute;right:6px;top:50%;transform:translateY(-50%);height:32px;padding:0 10px;border:0;border-radius:8px;background:transparent;color:var(--accent);font-weight:600;font-size:13px}
+.cambiar{text-align:center;margin:0;color:var(--muted);font-size:14px}
+.portada .btn.pri{width:100%;height:48px}
+.opciones{display:grid;gap:10px}
+.opcion{text-align:left;display:flex;flex-direction:column;gap:2px;padding:14px 16px;border-radius:12px;border:1px solid var(--line);background:var(--surface)}
+.opcion.on{border-color:var(--accent);box-shadow:0 0 0 1px var(--accent)}
+.opcion b{font-size:15px}
+.opcion span{font-size:13px;color:var(--muted)}
+
+/* ============ ENCABEZADO DE LA APP ============ */
+header.top{display:flex;align-items:center;justify-content:space-between;gap:12px;padding-top:20px}
+header.top h1{font-size:34px;line-height:1}
+.ico{width:40px;height:40px;border-radius:12px;border:1px solid var(--line);background:var(--surface);display:grid;place-items:center;color:var(--ink)}
+.ico svg{width:20px;height:20px}
+.invitar{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;background:var(--soft);border-radius:var(--r);padding:14px 16px}
+.invitar p{margin:0;font-size:14px}
+.codigo{font-family:var(--display);font-size:24px;letter-spacing:.12em}
+
+/* ============ CATEGORÍAS (pestañas) ============ */
+.cats{display:flex;gap:8px;overflow-x:auto;padding:2px;scrollbar-width:none}
+.cats::-webkit-scrollbar{display:none}
+.cat{flex:none;height:38px;padding:0 16px;border-radius:999px;border:1px solid var(--line);background:var(--surface);font-weight:600;color:var(--muted)}
+.cat.on{background:var(--ink);border-color:var(--ink);color:var(--bg)}
+.cat.mas{border-style:dashed}
+
+/* ============ RANKING ============ */
+.rank-cab{display:flex;align-items:baseline;justify-content:space-between;gap:12px}
+.rank-cab h2{font-size:28px}
+.lista{display:flex;flex-direction:column;gap:10px}
+.item{display:grid;grid-template-columns:28px minmax(0,1fr) auto;gap:12px;align-items:center;width:100%;text-align:left;
+  background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:14px}
+.item:hover{border-color:var(--muted)}
+.pos{font-family:var(--display);font-size:22px;color:var(--muted);text-align:center}
+.item.top1 .pos{color:var(--accent)}
+.item .nom{font-weight:600;font-size:16px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.item .sub{font-size:12px;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.item .sub.choque{color:var(--accent);font-weight:600}
+.tarjetas{display:flex;gap:5px}
+/* Cada tarjeta es el puntaje de una persona, como los jurados de la tele */
+.tarjeta{width:40px;height:50px;border-radius:7px;background:var(--accent);color:var(--accent-ink);display:flex;flex-direction:column;align-items:center;justify-content:center;line-height:1;
+  box-shadow:0 1px 0 rgba(0,0,0,.08)}
+.tarjeta b{font-family:var(--display);font-weight:400;font-size:19px}
+.tarjeta small{font-size:9px;font-weight:700;letter-spacing:.06em;margin-top:4px;opacity:.85}
+.tarjeta.falta{background:transparent;color:var(--muted);border:1.5px dashed var(--off)}
+.tarjeta.baja{background:var(--off);color:var(--off-ink)}
+
+/* ============ VENTANA DE CARGA ============ */
+.velo{position:fixed;inset:0;background:rgba(20,12,12,.5);display:flex;align-items:flex-end;justify-content:center;z-index:10}
+.hoja{background:var(--surface);width:100%;max-width:520px;border-radius:20px 20px 0 0;
+  padding:22px max(20px,env(safe-area-inset-right,0px)) calc(20px + env(safe-area-inset-bottom,0px)) max(20px,env(safe-area-inset-left,0px));
+  display:flex;flex-direction:column;gap:14px;max-height:92vh;overflow:auto}
+@media (min-width:600px){.velo{align-items:center}.hoja{border-radius:20px}}
+.hoja h3{font-size:26px}
+.fin{display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap}
+/* Selector de nota: la tarjeta grande con − y + */
+.nota{display:flex;align-items:center;justify-content:center;gap:18px;padding:6px 0}
+.nota .tarjeta{width:84px;height:104px;border-radius:12px}
+.nota .tarjeta b{font-size:44px}
+.nota .tarjeta small{font-size:11px}
+.paso{width:48px;height:48px;border-radius:50%;border:1px solid var(--line);background:var(--bg);font-size:24px;line-height:1}
+.rango{width:100%;accent-color:var(--accent)}
+.sinnota{display:flex;align-items:center;gap:8px;font-size:14px;color:var(--muted)}
+.otro{display:flex;align-items:center;gap:12px;background:var(--soft);border-radius:12px;padding:10px 12px;font-size:14px}
+.otro .tarjeta{width:34px;height:42px}
+.otro .tarjeta b{font-size:16px}
+.confirma{display:flex;align-items:center;gap:8px;flex-wrap:wrap;background:var(--soft);border-radius:12px;padding:10px 12px;font-size:14px}
+.confirma span{flex:1;min-width:150px}
+
+/* ============ BOTÓN FIJO, AVISOS Y APARIENCIA ============ */
+.pie{position:fixed;left:0;right:0;bottom:0;padding:12px max(16px,env(safe-area-inset-right,0px)) calc(12px + env(safe-area-inset-bottom,0px)) max(16px,env(safe-area-inset-left,0px));
+  background:linear-gradient(to top,var(--bg) 70%,transparent);display:flex;justify-content:center}
+.pie .btn{width:100%;max-width:600px;height:54px;font-size:17px;border-radius:16px}
+.toast{position:fixed;left:50%;bottom:calc(88px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--ink);color:var(--bg);
+  padding:10px 16px;border-radius:999px;font-size:14px;font-weight:500;z-index:20;max-width:calc(100% - 32px)}
+.tema{display:inline-flex;align-self:center;background:var(--soft);border-radius:999px;padding:3px;gap:2px}
+.tema button{border:0;background:transparent;border-radius:999px;padding:5px 12px;font-size:13px;font-weight:600;color:var(--muted)}
+.tema button.on{background:var(--surface);color:var(--ink);box-shadow:0 1px 2px rgba(0,0,0,.12)}
+@media (prefers-reduced-motion:no-preference){.velo .hoja{animation:sube .2s ease-out}@keyframes sube{from{transform:translateY(24px);opacity:.6}}}
+</style>
+</head>
+<body>
+
+<!-- El sello de Veredicto: lo usamos en la portada -->
+<template id="tplSello">
+  <svg class="sello" viewBox="0 0 72 72" aria-hidden="true">
+    <circle cx="36" cy="36" r="34" style="fill:var(--accent)"/>
+    <circle cx="36" cy="36" r="28" fill="none" style="stroke:var(--accent-ink)" stroke-width="1.5" stroke-dasharray="3 3"/>
+    <text x="36" y="47" text-anchor="middle" font-family="Gloock, Georgia, serif" font-size="32" style="fill:var(--accent-ink)">10</text>
+  </svg>
+</template>
+
+<!-- ============ PANTALLA DE INGRESO ============ -->
+<form id="login" class="portada" hidden novalidate>
+  <div class="marca"><span class="lugar-sello"></span><h1>Veredicto</h1><p>Cafés, cenas y películas, puntuados de a dos.</p></div>
+  <div class="campo"><label for="lEmail">Email</label><input type="email" id="lEmail" autocomplete="email" placeholder="tu@email.com"></div>
+  <div class="campo"><label for="lPass">Contraseña</label>
+    <div class="pass"><input type="password" id="lPass" autocomplete="current-password"><button type="button" class="ver" id="lVer">Mostrar</button></div>
+  </div>
+  <p class="err" id="lErr" hidden></p>
+  <button type="submit" class="btn pri" id="lEntrar">Entrar</button>
+  <p class="cambiar"><span id="lPregunta">¿No tenés cuenta?</span> <button type="button" class="link" id="lCambiar">Creá una</button></p>
+  <div class="tema" role="group" aria-label="Apariencia"><button type="button" data-tema="auto">Auto</button><button type="button" data-tema="claro">Claro</button><button type="button" data-tema="oscuro">Oscuro</button></div>
+</form>
+
+<!-- ============ BIENVENIDA: crear el espacio o unirse con un código ============ -->
+<form id="bienvenida" class="portada" hidden novalidate>
+  <div class="marca"><span class="lugar-sello"></span><h1>Bienvenidos</h1><p>Primero, armemos el lugar que van a compartir.</p></div>
+  <div class="campo"><label for="bNombre">¿Cómo te llamás?</label><input type="text" id="bNombre" maxlength="30" placeholder="Así te va a ver la otra persona" autocomplete="given-name"></div>
+  <div class="opciones" role="radiogroup" aria-label="¿Qué querés hacer?">
+    <button type="button" class="opcion on" data-modo="crear" role="radio" aria-checked="true"><b>Crear nuestro espacio</b><span>Te damos un código para invitar a tu pareja.</span></button>
+    <button type="button" class="opcion" data-modo="unirse" role="radio" aria-checked="false"><b>Tengo un código</b><span>Tu pareja ya creó el espacio y te pasó el código.</span></button>
+  </div>
+  <div class="campo" id="bCampoCodigo" hidden><label for="bCodigo">Código</label><input type="text" id="bCodigo" maxlength="12" placeholder="Ej: A1B2C3D4" autocomplete="off" style="text-transform:uppercase;letter-spacing:.1em"></div>
+  <p class="err" id="bErr" hidden></p>
+  <button type="submit" class="btn pri" id="bListo">Crear espacio</button>
+  <p class="cambiar"><button type="button" class="link" data-a="salir">Cerrar sesión</button></p>
+</form>
+
+<!-- ============ LA APLICACIÓN ============ -->
+<div id="app" class="wrap" hidden>
+  <header class="top">
+    <h1>Veredicto</h1>
+    <button class="ico" data-a="ajustes" aria-label="Ajustes"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 7h16M4 12h16M4 17h16"/></svg></button>
+  </header>
+  <main id="main" class="wrap" style="width:100%"></main>
+</div>
+
+<div class="pie" id="pie" hidden><button class="btn pri" data-a="nuevo">Dictar veredicto</button></div>
+<div id="velo" class="velo" hidden></div>
+<div id="toast" class="toast" role="status" hidden></div>
+
+<script>
+/* =====================================================================
+   1. CONEXIÓN CON SUPABASE
+   La llave pública se puede mostrar: la seguridad la ponen las reglas (RLS).
+   ===================================================================== */
+const SUPABASE_URL = 'https://dcdtaelliihjheevcieb.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_vc3DRDsC-VuVe5Kxzrkf9A_8O7X5XEg';
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+/* =====================================================================
+   2. ESTADO: todo lo que la página "sabe" en este momento
+   ===================================================================== */
+const SUGERIDAS = ['Cafés','Cenas','Películas','Heladerías','Series','Brunch'];
+const S = {
+  yo: null,          // mi id de usuario
+  espacio: null,     // { id, codigo }
+  miembros: [],      // [{ user_id, nombre }]
+  cats: [],          // [{ id, nombre }]
+  items: [],         // [{ id, categoria_id, nombre, lugar, link, notas, fecha }]
+  puntajes: [],      // [{ item_id, user_id, puntaje }]
+  catSel: null,      // categoría que estás mirando
+  confirma: null,    // qué está pidiendo confirmación
+  listo: false
+};
+
+/* =====================================================================
+   3. FUNCIONES DE AYUDA
+   ===================================================================== */
+const $ = s => document.querySelector(s);
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const nota = n => n == null ? '–' : String(n).replace('.', ',').replace(',0', '');   // 8.5 -> "8,5" · 9 -> "9"
+const inicial = nombre => (nombre || '?').trim().charAt(0).toUpperCase();
+function hoy(){ const d=new Date(); return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); }
+function nuevoId(){ return crypto.randomUUID ? crypto.randomUUID() : 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g,c=>{const r=Math.random()*16|0;return (c==='x'?r:(r&3|8)).toString(16)}); }
+function fechaLinda(f){ if(!f) return ''; return new Date(f+'T12:00').toLocaleDateString('es-AR',{day:'numeric',month:'short',year:'numeric'}).replace('.', ''); }
+function toast(t){ const el=$('#toast'); el.textContent=t; el.hidden=false; clearTimeout(toast.t); toast.t=setTimeout(()=>el.hidden=true,2600); }
+async function seguro(fn, ok){
+  try { await fn(); if (ok) toast(ok); return true; }
+  catch(e){ console.error(e); toast('No se pudo guardar. Revisá tu conexión y probá de nuevo.'); return false; }
+}
+function yo(){ return S.miembros.find(m => m.user_id === S.yo) || {nombre:'Vos'}; }
+function pareja(){ return S.miembros.find(m => m.user_id !== S.yo) || null; }
+function sello(){ return $('#tplSello').innerHTML; }
+document.querySelectorAll('.lugar-sello').forEach(el => el.innerHTML = sello());
+
+/* =====================================================================
+   4. BASE DE DATOS: leer y guardar en Supabase
+   ===================================================================== */
+const db = {
+  // ¿Ya pertenezco a un espacio? Si sí, cargo todo lo de ese espacio
+  async cargar(){
+    const m = await sb.from('miembros').select('espacio_id,user_id,nombre');
+    if (m.error) throw m.error;
+    const mio = m.data.find(r => r.user_id === S.yo);
+    if (!mio){ mostrar('bienvenida'); return; }
+    const espId = mio.espacio_id;
+    const [e, c, i, p] = await Promise.all([
+      sb.from('espacios').select('id,codigo').eq('id', espId).single(),
+      sb.from('categorias').select('id,nombre,creado').eq('espacio_id', espId).order('creado'),
+      sb.from('items').select('id,categoria_id,nombre,lugar,link,notas,fecha,pendiente,creado').eq('espacio_id', espId),
+      sb.from('puntajes').select('item_id,user_id,puntaje')
+    ]);
+    for (const r of [e, c, i, p]) if (r.error) throw r.error;
+    S.espacio = e.data;
+    S.miembros = m.data.filter(r => r.espacio_id === espId);
+    S.cats = c.data;
+    S.items = i.data.filter(x => !x.pendiente);
+    S.puntajes = p.data.map(x => ({...x, puntaje:Number(x.puntaje)}));
+    if (!S.cats.find(x => x.id === S.catSel)) S.catSel = S.cats[0]?.id || null;
+    S.listo = true;
+    mostrar('app');
+  },
+  async crearCat(nombre){
+    nombre = nombre.trim().replace(/\s+/g,' '); if (!nombre) return;
+    const ya = S.cats.find(c => c.nombre.toLowerCase() === nombre.toLowerCase());
+    if (ya){ S.catSel = ya.id; render(); return; }
+    const fila = { id:nuevoId(), espacio_id:S.espacio.id, nombre };
+    const { error } = await sb.from('categorias').insert(fila); if (error) throw error;
+    S.cats.push({...fila, creado:new Date().toISOString()}); S.catSel = fila.id; render();
+  },
+  async renombrarCat(id, nombre){
+    const { error } = await sb.from('categorias').update({nombre}).eq('id', id); if (error) throw error;
+    S.cats.find(c => c.id === id).nombre = nombre; render();
+  },
+  async borrarCat(id){
+    const { error } = await sb.from('categorias').delete().eq('id', id); if (error) throw error;   // sus ítems se borran solos
+    const ids = S.items.filter(x => x.categoria_id === id).map(x => x.id);
+    S.items = S.items.filter(x => x.categoria_id !== id);
+    S.puntajes = S.puntajes.filter(p => !ids.includes(p.item_id));
+    S.cats = S.cats.filter(c => c.id !== id); S.catSel = S.cats[0]?.id || null; render();
+  },
+  async guardarItem(fila, miNota){
+    const { error } = await sb.from('items').upsert({...fila, espacio_id:S.espacio.id}); if (error) throw error;
+    const i = S.items.findIndex(x => x.id === fila.id);
+    if (i >= 0) S.items[i] = {...S.items[i], ...fila}; else S.items.push({...fila, creado:new Date().toISOString()});
+    await this.guardarNota(fila.id, miNota);
+    render();
+  },
+  async guardarNota(itemId, n){
+    const antes = S.puntajes.find(p => p.item_id === itemId && p.user_id === S.yo);
+    if (n == null){
+      if (!antes) return;
+      const { error } = await sb.from('puntajes').delete().eq('item_id', itemId).eq('user_id', S.yo); if (error) throw error;
+      S.puntajes = S.puntajes.filter(p => p !== antes); return;
+    }
+    const { error } = await sb.from('puntajes').upsert({item_id:itemId, user_id:S.yo, puntaje:n, actualizado:new Date().toISOString()});
+    if (error) throw error;
+    if (antes) antes.puntaje = n; else S.puntajes.push({item_id:itemId, user_id:S.yo, puntaje:n});
+  },
+  async borrarItem(id){
+    const { error } = await sb.from('items').delete().eq('id', id); if (error) throw error;
+    S.items = S.items.filter(x => x.id !== id); S.puntajes = S.puntajes.filter(p => p.item_id !== id); render();
+  },
+  async cambiarNombre(nombre){
+    const { error } = await sb.from('miembros').update({nombre}).eq('espacio_id', S.espacio.id).eq('user_id', S.yo); if (error) throw error;
+    yo().nombre = nombre; render();
+  }
+};
+
+/* =====================================================================
+   5. CÁLCULOS: puntajes y ranking
+   ===================================================================== */
+function notasDe(itemId){
+  const mia = S.puntajes.find(p => p.item_id === itemId && p.user_id === S.yo)?.puntaje ?? null;
+  const p2 = pareja();
+  const suya = p2 ? (S.puntajes.find(p => p.item_id === itemId && p.user_id === p2.user_id)?.puntaje ?? null) : null;
+  const hay = [mia, suya].filter(n => n != null);
+  const prom = hay.length ? hay.reduce((a,b)=>a+b,0) / hay.length : null;
+  return { mia, suya, prom, choque: mia != null && suya != null && Math.abs(mia - suya) >= 3 };
+}
+function ranking(catId){
+  return S.items.filter(x => x.categoria_id === catId).map(x => ({...x, ...notasDe(x.id)}))
+    .sort((a,b) => (b.prom ?? -1) - (a.prom ?? -1) || (b.fecha||'').localeCompare(a.fecha||'') || a.nombre.localeCompare(b.nombre,'es'));
+}
+
+/* =====================================================================
+   6. DIBUJAR LA PÁGINA
+   ===================================================================== */
+function tarjeta(n, quien){
+  if (n == null) return `<span class="tarjeta falta" aria-label="${esc(quien)}: sin nota"><b>?</b><small>${esc(inicial(quien))}</small></span>`;
+  return `<span class="tarjeta${n < 5 ? ' baja' : ''}" aria-label="${esc(quien)}: ${nota(n)}"><b class="num">${nota(n)}</b><small>${esc(inicial(quien))}</small></span>`;
+}
+
+function render(){
+  if (!S.listo) return;
+  const m = $('#main');
+  const p2 = pareja();
+  let html = '';
+  // Aviso para invitar a la pareja, mientras todavía no se unió
+  if (!p2) html += `<div class="invitar"><p>Pasale este código a tu pareja para que se una:</p>
+      <span class="codigo">${esc(S.espacio.codigo)}</span><button class="btn chico" data-a="copiar">Copiar</button></div>`;
+  // Pestañas de categorías
+  html += `<nav class="cats" aria-label="Categorías">${S.cats.map(c => `<button class="cat${c.id===S.catSel?' on':''}" data-a="cat" data-id="${c.id}">${esc(c.nombre)}</button>`).join('')}
+      <button class="cat mas" data-a="nuevaCat">+ Categoría</button></nav>`;
+  if (!S.cats.length){
+    html += `<section class="card" style="display:flex;flex-direction:column;gap:14px">
+      <p class="eyebrow">Para empezar</p>
+      <p style="margin:0;font-size:17px">¿Qué van a puntuar? Elegí las categorías que les sirvan; después pueden sumar más.</p>
+      <div style="display:flex;flex-wrap:wrap;gap:8px">${SUGERIDAS.map(s => `<button class="cat" data-a="sugerida" data-n="${esc(s)}">+ ${esc(s)}</button>`).join('')}</div></section>`;
+    m.innerHTML = html; $('#pie').hidden = true; return;
+  }
+  $('#pie').hidden = false;
+  const cat = S.cats.find(c => c.id === S.catSel);
+  const lista = ranking(cat.id);
+  html += `<div class="rank-cab"><h2>${esc(cat.nombre)}</h2><button class="link" data-a="editarCat" style="font-size:14px">Editar</button></div>`;
+  if (S.confirma === 'cat') html += `<div class="confirma"><span>${lista.length ? `Se van a borrar también ${lista.length === 1 ? 'el veredicto' : `los ${lista.length} veredictos`} de esta categoría.` : '¿Borrar esta categoría?'}</span>
+      <button class="btn chico" data-a="no">Cancelar</button><button class="btn chico dan" data-a="borrarCat">Sí, borrar</button></div>`;
+  if (S.confirma === 'renombrar') html += `<form class="confirma" data-f="renombrar"><input type="text" id="inRenombrar" value="${esc(cat.nombre)}" maxlength="40" aria-label="Nuevo nombre" style="flex:1;min-width:150px">
+      <button class="btn chico" type="button" data-a="no">Cancelar</button><button class="btn chico pri" type="submit">Guardar</button></form>`;
+  if (S.confirma === 'menuCat') html += `<div class="confirma"><span>¿Qué querés hacer con "${esc(cat.nombre)}"?</span>
+      <button class="btn chico" data-a="pedirRenombrar">Cambiar nombre</button><button class="btn chico dan" data-a="pedirBorrarCat">Borrar</button><button class="btn chico" data-a="no">Cancelar</button></div>`;
+  if (!lista.length) html += `<section class="card"><p class="vacio">Todavía no hay veredictos en ${esc(cat.nombre)}.<br>Tocá <b>Dictar veredicto</b> para cargar el primero.</p></section>`;
+  else html += `<div class="lista">${lista.map((x,i) => {
+      const sub = x.choque ? `No coinciden: ${nota(x.mia)} contra ${nota(x.suya)}` : [x.lugar, fechaLinda(x.fecha)].filter(Boolean).join(' · ');
+      return `<button class="item${i===0 && x.prom!=null ? ' top1' : ''}" data-a="abrir" data-id="${x.id}">
+        <span class="pos num">${x.prom != null ? i+1 : '–'}</span>
+        <span style="min-width:0"><span class="nom" style="display:block">${esc(x.nombre)}</span><span class="sub${x.choque?' choque':''}" style="display:block">${esc(sub) || '&nbsp;'}</span></span>
+        <span class="tarjetas">${tarjeta(x.mia, yo().nombre)}${p2 ? tarjeta(x.suya, p2.nombre) : ''}</span></button>`; }).join('')}</div>`;
+  m.innerHTML = html;
+}
+
+// Muestra una de las tres pantallas: ingreso, bienvenida o la app
+function mostrar(cual){
+  $('#login').hidden = cual !== 'login';
+  $('#bienvenida').hidden = cual !== 'bienvenida';
+  $('#app').hidden = cual !== 'app';
+  $('#pie').hidden = cual !== 'app' || !S.cats.length;
+  if (cual === 'app') render();
+}
+
+/* =====================================================================
+   7. VENTANA PARA DICTAR O EDITAR UN VEREDICTO
+   ===================================================================== */
+let notaHoja = 8;   // la nota que estás eligiendo en la ventana
+function abrirHoja(itemId){
+  const x = itemId ? S.items.find(i => i.id === itemId) : null;
+  const n = x ? notasDe(x.id) : {mia:null, suya:null};
+  const cat = S.cats.find(c => c.id === (x ? x.categoria_id : S.catSel));
+  const p2 = pareja();
+  notaHoja = n.mia ?? 8;
+  const sinNota = x && n.mia == null;
+  S.confirmaHoja = false;
+  $('#velo').innerHTML = `<form class="hoja" data-f="item" data-id="${x ? x.id : ''}" role="dialog" aria-modal="true" aria-labelledby="hTit" novalidate>
+    <p class="eyebrow">${esc(cat.nombre)}</p>
+    <h3 id="hTit">${x ? 'Editar veredicto' : 'Nuevo veredicto'}</h3>
+    <div class="campo"><label for="fNombre">Nombre</label><input type="text" id="fNombre" maxlength="80" value="${esc(x?.nombre)}" placeholder="Ej: Café Tilo"><p class="err" id="eNombre" hidden></p></div>
+    <div class="campo"><label>Tu nota</label>
+      <div class="nota" id="notaCaja"${sinNota ? ' hidden' : ''}>
+        <button type="button" class="paso" data-paso="-0.5" aria-label="Bajar medio punto">−</button>
+        <span class="tarjeta"><b class="num" id="notaNum">${nota(notaHoja)}</b><small>${esc(inicial(yo().nombre))}</small></span>
+        <button type="button" class="paso" data-paso="0.5" aria-label="Subir medio punto">+</button>
+      </div>
+      <input type="range" class="rango" id="fNota" min="1" max="10" step="0.5" value="${notaHoja}" aria-label="Tu nota del 1 al 10"${sinNota ? ' hidden' : ''}>
+      <label class="sinnota"><input type="checkbox" id="fSinNota"${sinNota ? ' checked' : ''}> Todavía no lo puntué</label>
+    </div>
+    ${x && p2 ? `<div class="otro">${tarjeta(n.suya, p2.nombre)}<span>${n.suya != null ? `La nota de ${esc(p2.nombre)}` : `${esc(p2.nombre)} todavía no lo puntuó`}</span></div>` : ''}
+    <div class="dos">
+      <div class="campo"><label for="fLugar">Lugar o barrio <span style="font-weight:400">(opcional)</span></label><input type="text" id="fLugar" maxlength="80" value="${esc(x?.lugar)}" placeholder="Ej: Palermo"></div>
+      <div class="campo"><label for="fFecha">Fecha</label><input type="date" id="fFecha" value="${x ? (x.fecha || '') : hoy()}" max="${hoy()}"></div>
+    </div>
+    <div class="campo"><label for="fLink">Link <span style="font-weight:400">(opcional)</span></label><input type="url" id="fLink" maxlength="300" value="${esc(x?.link)}" placeholder="Google Maps, reseña, tráiler…"></div>
+    <div class="campo"><label for="fNotas">Comentarios <span style="font-weight:400">(opcional)</span></label><textarea id="fNotas" maxlength="500" placeholder="Ej: pedir el budín de limón">${esc(x?.notas)}</textarea></div>
+    ${x && x.link ? `<a href="${esc(x.link)}" target="_blank" rel="noopener" style="color:var(--accent);font-weight:600;font-size:14px">Abrir link ↗</a>` : ''}
+    <div id="zonaBorrar"></div>
+    <div class="fin">
+      ${x ? '<button type="button" class="btn dan" data-a="pedirBorrarItem" style="margin-right:auto">Borrar</button>' : ''}
+      <button type="button" class="btn" data-a="cerrar">Cancelar</button>
+      <button type="submit" class="btn pri">${x ? 'Guardar' : 'Dictar veredicto'}</button>
+    </div>
+  </form>`;
+  $('#velo').hidden = false;
+  const rango = $('#fNota'), num = $('#notaNum');
+  rango.oninput = () => { notaHoja = Number(rango.value); num.textContent = nota(notaHoja); };
+  $('#fSinNota').onchange = e => { $('#notaCaja').hidden = rango.hidden = e.target.checked; };
+  $('#fNombre').oninput = () => $('#eNombre').hidden = true;
+  if (!x) setTimeout(() => $('#fNombre').focus(), 60);
+}
+function cerrarHoja(){ $('#velo').hidden = true; $('#velo').innerHTML = ''; }
+
+async function guardarItem(form){
+  const nombre = $('#fNombre').value.trim();
+  if (!nombre){ const e=$('#eNombre'); e.textContent='Escribí el nombre del lugar o la película.'; e.hidden=false; $('#fNombre').focus(); return; }
+  let link = $('#fLink').value.trim();
+  if (link && !/^https?:\/\//i.test(link)) link = 'https://' + link;
+  const id = form.dataset.id || nuevoId();
+  const previo = S.items.find(i => i.id === id);
+  const fila = { id, categoria_id: previo ? previo.categoria_id : S.catSel, nombre,
+    lugar: $('#fLugar').value.trim() || null, link: link || null, notas: $('#fNotas').value.trim() || null, fecha: $('#fFecha').value || null };
+  const miNota = $('#fSinNota').checked ? null : notaHoja;
+  cerrarHoja();
+  await seguro(() => db.guardarItem(fila, miNota), previo ? 'Veredicto actualizado' : 'Veredicto dictado');
+}
+
+/* Ajustes: mi nombre, el código del espacio, apariencia y cerrar sesión */
+function abrirAjustes(){
+  const p2 = pareja();
+  $('#velo').innerHTML = `<form class="hoja" data-f="ajustes" role="dialog" aria-modal="true" aria-labelledby="aTit" novalidate>
+    <h3 id="aTit">Ajustes</h3>
+    <div class="campo"><label for="aNombre">Tu nombre</label><input type="text" id="aNombre" maxlength="30" value="${esc(yo().nombre)}"></div>
+    <div class="campo"><label>Código del espacio</label>
+      <div class="otro" style="justify-content:space-between"><span class="codigo">${esc(S.espacio.codigo)}</span><button type="button" class="btn chico" data-a="copiar">Copiar</button></div>
+      <span style="font-size:13px;color:var(--muted)">${p2 ? `Compartís este espacio con ${esc(p2.nombre)}.` : 'Todavía no se unió nadie. Pasale este código a tu pareja.'}</span></div>
+    <div class="campo"><label>Apariencia</label><div class="tema" style="align-self:flex-start" role="group" aria-label="Apariencia"><button type="button" data-tema="auto">Auto</button><button type="button" data-tema="claro">Claro</button><button type="button" data-tema="oscuro">Oscuro</button></div></div>
+    <div class="fin">
+      <button type="button" class="btn dan" data-a="salir" style="margin-right:auto">Cerrar sesión</button>
+      <button type="button" class="btn" data-a="cerrar">Cancelar</button>
+      <button type="submit" class="btn pri">Guardar</button>
+    </div></form>`;
+  $('#velo').hidden = false;
+  aplicarTema(temaGuardado);
+}
+
+/* =====================================================================
+   8. CLICS Y FORMULARIOS
+   ===================================================================== */
+document.addEventListener('click', async e => {
+  if (e.target.id === 'velo'){ cerrarHoja(); return; }
+  const paso = e.target.closest('[data-paso]');
+  if (paso){ notaHoja = Math.min(10, Math.max(1, notaHoja + Number(paso.dataset.paso))); $('#fNota').value = notaHoja; $('#notaNum').textContent = nota(notaHoja); return; }
+  const b = e.target.closest('[data-a]'); if (!b) return;
+  const a = b.dataset.a, id = b.dataset.id;
+  if (a === 'cat'){ S.catSel = id; S.confirma = null; render(); }
+  else if (a === 'nuevaCat'){ S.confirma = null; abrirNuevaCat(); }
+  else if (a === 'sugerida') await seguro(() => db.crearCat(b.dataset.n));
+  else if (a === 'editarCat'){ S.confirma = S.confirma === 'menuCat' ? null : 'menuCat'; render(); }
+  else if (a === 'pedirRenombrar'){ S.confirma = 'renombrar'; render(); const i=$('#inRenombrar'); i.focus(); i.select(); }
+  else if (a === 'pedirBorrarCat'){ S.confirma = 'cat'; render(); }
+  else if (a === 'borrarCat'){ const n = S.cats.find(c => c.id === S.catSel).nombre; S.confirma = null; await seguro(() => db.borrarCat(S.catSel), 'Borraste ' + n); }
+  else if (a === 'no'){ S.confirma = null; render(); }
+  else if (a === 'nuevo') abrirHoja(null);
+  else if (a === 'abrir') abrirHoja(id);
+  else if (a === 'cerrar') cerrarHoja();
+  else if (a === 'pedirBorrarItem'){
+    $('#zonaBorrar').innerHTML = `<div class="confirma"><span>¿Borrar este veredicto y las notas de los dos?</span>
+      <button type="button" class="btn chico" data-a="noBorrarItem">No</button><button type="button" class="btn chico dan" data-a="borrarItem">Sí, borrar</button></div>`; }
+  else if (a === 'noBorrarItem') $('#zonaBorrar').innerHTML = '';
+  else if (a === 'borrarItem'){ const id2 = $('.hoja').dataset.id; cerrarHoja(); await seguro(() => db.borrarItem(id2), 'Veredicto borrado'); }
+  else if (a === 'ajustes') abrirAjustes();
+  else if (a === 'copiar'){
+    try { await navigator.clipboard.writeText(S.espacio.codigo); toast('Código copiado'); }
+    catch(err){ toast('Código: ' + S.espacio.codigo); }
+  }
+  else if (a === 'salir'){ cerrarHoja(); sb.auth.signOut(); }
+});
+function abrirNuevaCat(){
+  $('#velo').innerHTML = `<form class="hoja" data-f="nuevaCat" role="dialog" aria-modal="true" aria-labelledby="cTit" novalidate>
+    <h3 id="cTit">Nueva categoría</h3>
+    <div class="campo"><label for="cNombre">Nombre</label><input type="text" id="cNombre" maxlength="40" placeholder="Ej: Hamburgueserías"></div>
+    <div style="display:flex;flex-wrap:wrap;gap:8px">${SUGERIDAS.filter(s => !S.cats.some(c => c.nombre === s)).map(s => `<button type="button" class="cat" data-sug="${esc(s)}">${esc(s)}</button>`).join('')}</div>
+    <div class="fin"><button type="button" class="btn" data-a="cerrar">Cancelar</button><button type="submit" class="btn pri">Crear</button></div></form>`;
+  $('#velo').hidden = false;
+  $('#velo').querySelectorAll('[data-sug]').forEach(b => b.onclick = () => { $('#cNombre').value = b.dataset.sug; });
+  setTimeout(() => $('#cNombre').focus(), 60);
+}
+document.addEventListener('submit', async e => {
+  const f = e.target, t = f.dataset.f; if (!t) return;
+  e.preventDefault();
+  if (t === 'item') guardarItem(f);
+  else if (t === 'nuevaCat'){ const v = $('#cNombre').value; if (!v.trim()) return; cerrarHoja(); await seguro(() => db.crearCat(v), 'Categoría creada'); }
+  else if (t === 'renombrar'){ const v = $('#inRenombrar').value.trim().replace(/\s+/g,' '); if (!v) return; S.confirma = null; await seguro(() => db.renombrarCat(S.catSel, v), 'Nombre cambiado'); }
+  else if (t === 'ajustes'){ const v = $('#aNombre').value.trim(); cerrarHoja(); if (v && v !== yo().nombre) await seguro(() => db.cambiarNombre(v), 'Nombre guardado'); }
+});
+document.addEventListener('keydown', e => { if (e.key === 'Escape' && !$('#velo').hidden) cerrarHoja(); });
+// Al volver a la app (por ejemplo, después de que tu pareja cargó algo), se actualiza sola
+document.addEventListener('visibilitychange', () => { if (!document.hidden && S.listo) db.cargar().catch(console.error); });
+
+/* =====================================================================
+   9. BIENVENIDA: crear el espacio o unirse con un código
+   ===================================================================== */
+let modoBienvenida = 'crear';
+document.querySelectorAll('[data-modo]').forEach(b => b.onclick = () => {
+  modoBienvenida = b.dataset.modo;
+  document.querySelectorAll('[data-modo]').forEach(o => { o.classList.toggle('on', o === b); o.setAttribute('aria-checked', o === b); });
+  $('#bCampoCodigo').hidden = modoBienvenida !== 'unirse';
+  $('#bListo').textContent = modoBienvenida === 'unirse' ? 'Unirme' : 'Crear espacio';
+  $('#bErr').hidden = true;
+  if (modoBienvenida === 'unirse') $('#bCodigo').focus();
+});
+$('#bienvenida').addEventListener('submit', async e => {
+  e.preventDefault();
+  const nombre = $('#bNombre').value.trim(), cod = $('#bCodigo').value.trim();
+  const err = t => { $('#bErr').textContent = t; $('#bErr').hidden = false; };
+  if (!nombre) return err('Escribí tu nombre.');
+  if (modoBienvenida === 'unirse' && !cod) return err('Escribí el código que te pasaron.');
+  $('#bListo').disabled = true;
+  const { error } = modoBienvenida === 'unirse'
+    ? await sb.rpc('unirse_espacio', { cod, mi_nombre: nombre })
+    : await sb.rpc('crear_espacio', { mi_nombre: nombre });
+  $('#bListo').disabled = false;
+  if (error) return err(error.message || 'No se pudo. Probá de nuevo.');
+  await db.cargar().catch(e2 => { console.error(e2); err('No se pudieron cargar los datos. Recargá la página.'); });
+});
+
+/* =====================================================================
+   10. INICIAR SESIÓN Y CREAR CUENTA
+   ===================================================================== */
+const MENSAJES = {
+  'Invalid login credentials': 'El email o la contraseña no coinciden.',
+  'User already registered': 'Ya existe una cuenta con ese email. Tocá "Entrá", acá abajo.',
+  'Email not confirmed': 'Falta confirmar el email: revisá tu casilla y tocá el link que te llegó.'
+};
+let modoCrear = false;
+function errLogin(t){ const e=$('#lErr'); e.textContent=t; e.hidden=false; }
+function ponerModo(crear){
+  modoCrear = crear;
+  $('#lEntrar').textContent = crear ? 'Crear cuenta' : 'Entrar';
+  $('#lPregunta').textContent = crear ? '¿Ya tenés cuenta?' : '¿No tenés cuenta?';
+  $('#lCambiar').textContent = crear ? 'Entrá' : 'Creá una';
+  $('#lPass').placeholder = crear ? 'Mínimo 6 caracteres' : '';
+  $('#lPass').autocomplete = crear ? 'new-password' : 'current-password';
+  $('#lErr').hidden = true;
+}
+$('#login').addEventListener('submit', async e => {
+  e.preventDefault();
+  const email = $('#lEmail').value.trim(), password = $('#lPass').value;
+  $('#lErr').hidden = true;
+  if (!email || !password) return errLogin('Completá el email y la contraseña.');
+  if (modoCrear && password.length < 6) return errLogin('La contraseña tiene que tener al menos 6 caracteres.');
+  $('#lEntrar').disabled = true;
+  const { data, error } = modoCrear ? await sb.auth.signUp({email, password}) : await sb.auth.signInWithPassword({email, password});
+  $('#lEntrar').disabled = false;
+  if (error) return errLogin(MENSAJES[error.message] || error.message);
+  if (modoCrear && !data.session) errLogin('Te mandamos un email para confirmar la cuenta. Tocá el link y después entrá acá.');
+});
+$('#lCambiar').onclick = () => ponerModo(!modoCrear);
+$('#lVer').onclick = () => { const p=$('#lPass'); const ver=p.type==='password'; p.type=ver?'text':'password'; $('#lVer').textContent=ver?'Ocultar':'Mostrar'; };
+
+/* Modo claro / oscuro: se aplica y se recuerda en este dispositivo */
+function aplicarTema(t){
+  if (t === 'claro') document.documentElement.dataset.theme = 'light';
+  else if (t === 'oscuro') document.documentElement.dataset.theme = 'dark';
+  else delete document.documentElement.dataset.theme;
+  document.querySelectorAll('[data-tema]').forEach(b => b.classList.toggle('on', b.dataset.tema === t));
+}
+let temaGuardado = 'auto';
+try { temaGuardado = localStorage.getItem('veredicto-tema') || 'auto'; } catch(e){}
+aplicarTema(temaGuardado);
+document.addEventListener('click', e => {
+  const b = e.target.closest('[data-tema]'); if (!b) return;
+  temaGuardado = b.dataset.tema;
+  try { localStorage.setItem('veredicto-tema', temaGuardado); } catch(e){}
+  aplicarTema(temaGuardado);
+});
+
+/* Al abrir: si hay sesión, cargar los datos; si no, mostrar el ingreso */
+sb.auth.onAuthStateChange((_evento, sesion) => setTimeout(() => {
+  if (!sesion){ Object.assign(S, {yo:null, espacio:null, miembros:[], cats:[], items:[], puntajes:[], listo:false}); mostrar('login'); return; }
+  if (S.yo === sesion.user.id && S.listo) return;
+  S.yo = sesion.user.id;
+  db.cargar().catch(e => { console.error(e); mostrar('app'); $('#main').innerHTML = '<div class="card"><p class="vacio">No se pudieron cargar los datos. Revisá tu conexión y recargá la página.</p></div>'; });
+}, 0));
+</script>
+</body>
+</html>
