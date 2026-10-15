@@ -26,7 +26,7 @@
 /* ============ COLORES Y TIPOGRAFÍAS ============
    Crema y rojo vino. Todos los colores están definidos acá una sola vez. */
 :root{
-  --bg:#F6F1E7; --surface:#FFFBF2; --soft:#EFE6D6; --ink:#2A1F1C; --muted:#75665D; --line:#E7DCC8; --flecha:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 8'%3E%3Cpath d='M1.5 1.5 6 6l4.5-4.5' fill='none' stroke='%2375665D' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  --bg:#F6F1E7; --surface:#FFFBF2; --soft:#EFE6D6; --ink:#2A1F1C; --muted:#75665D; --line:#E7DCC8; --nota-bg:#4A3E3A; --nota-ink:#FFFBF2; --flecha:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 8'%3E%3Cpath d='M1.5 1.5 6 6l4.5-4.5' fill='none' stroke='%2375665D' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
   --accent:#8E1B2A; --accent-ink:#FFFBF2; --off:#DCCDB4; --off-ink:#5A4A40; --danger:#B3261E;
   --display:'Gloock',Georgia,'Times New Roman',serif;
   --body:'Figtree',system-ui,-apple-system,'Segoe UI',sans-serif;
@@ -34,12 +34,12 @@
 }
 /* Modo oscuro automático (si el celular está en oscuro y no elegiste "Claro") */
 @media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
-  --bg:#161112; --surface:#201819; --soft:#2C2223; --ink:#F3E9DA; --muted:#A8978A; --line:#352A2A; --flecha:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 8'%3E%3Cpath d='M1.5 1.5 6 6l4.5-4.5' fill='none' stroke='%23A8978A' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  --bg:#161112; --surface:#201819; --soft:#2C2223; --ink:#F3E9DA; --muted:#A8978A; --line:#352A2A; --nota-bg:#4A3D3E; --nota-ink:#F3E9DA; --flecha:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 8'%3E%3Cpath d='M1.5 1.5 6 6l4.5-4.5' fill='none' stroke='%23A8978A' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
   --accent:#D4566A; --accent-ink:#1A0E10; --off:#3E3132; --off-ink:#C9B8A8; --danger:#F08A80;
   color-scheme:dark}}
 /* Modo oscuro elegido a mano (mismos colores que arriba) */
 :root[data-theme="dark"]{
-  --bg:#161112; --surface:#201819; --soft:#2C2223; --ink:#F3E9DA; --muted:#A8978A; --line:#352A2A; --flecha:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 8'%3E%3Cpath d='M1.5 1.5 6 6l4.5-4.5' fill='none' stroke='%23A8978A' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  --bg:#161112; --surface:#201819; --soft:#2C2223; --ink:#F3E9DA; --muted:#A8978A; --line:#352A2A; --nota-bg:#4A3D3E; --nota-ink:#F3E9DA; --flecha:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 8'%3E%3Cpath d='M1.5 1.5 6 6l4.5-4.5' fill='none' stroke='%23A8978A' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
   --accent:#D4566A; --accent-ink:#1A0E10; --off:#3E3132; --off-ink:#C9B8A8; --danger:#F08A80;
   color-scheme:dark}
 
@@ -131,7 +131,7 @@ header.top h1{font-size:34px;line-height:1}
 .item .sub.choque{color:var(--accent);font-weight:600}
 .tarjetas{display:flex;gap:5px}
 /* Cada tarjeta es el puntaje de una persona, como los jurados de la tele */
-.tarjeta{width:40px;height:50px;border-radius:7px;background:var(--accent);color:var(--accent-ink);display:flex;flex-direction:column;align-items:center;justify-content:center;line-height:1;
+.tarjeta{width:40px;height:50px;border-radius:7px;background:var(--nota-bg);color:var(--nota-ink);display:flex;flex-direction:column;align-items:center;justify-content:center;line-height:1;
   box-shadow:0 1px 0 rgba(0,0,0,.08)}
 .tarjeta b{font-family:var(--display);font-weight:400;font-size:19px}
 .tarjeta small{font-size:9px;font-weight:700;letter-spacing:.06em;margin-top:4px;opacity:.85}
@@ -221,6 +221,29 @@ header.top h1{font-size:34px;line-height:1}
 .nota{gap:12px}
 .nota .paso{width:40px;height:40px;font-size:22px}
 .asp-otros{font-size:12px;color:var(--muted)}
+.prom-fila{display:flex;flex-direction:column;align-items:center;justify-content:center;width:48px;height:50px;border-radius:7px;margin-right:5px;line-height:1;background:var(--accent);color:var(--accent-ink);box-shadow:0 2px 6px rgba(142,27,42,.25)}
+.prom-fila b{font-family:var(--display);font-weight:400;font-size:22px}
+.prom-fila small{font-size:8px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;margin-top:4px;opacity:.9}
+.afinidad.suave{background:var(--soft);color:var(--ink);cursor:default}
+.afinidad.suave span span{color:var(--muted)}
+.aviso-voto{display:flex;align-items:center;gap:12px;width:100%;text-align:left;padding:14px 16px;border-radius:var(--r);border:1px solid var(--line);background:var(--surface);color:var(--ink);font-size:15px}
+.aviso-voto > span:nth-child(2){flex:1;min-width:0}
+.aviso-voto .punto{width:10px;height:10px;border-radius:50%;background:var(--accent);flex:none;animation:latir 1.6s ease-in-out infinite}
+@keyframes latir{50%{transform:scale(1.35);opacity:.6}}
+@media (prefers-reduced-motion:reduce){.aviso-voto .punto{animation:none}}
+.avisar{font-size:12px;font-weight:600;color:var(--accent);margin-left:4px}
+.volveria{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:10px 0 2px;font-weight:600}
+.sino{display:flex;gap:6px}
+.sino button{height:34px;min-width:56px;padding:0 14px;border-radius:999px;border:1px solid var(--line);background:var(--surface);font-weight:600;color:var(--muted)}
+.sino button.on{background:var(--accent);border-color:transparent;color:var(--accent-ink)}
+.sino button.on.no{background:var(--ink);color:var(--bg)}
+.foto-dos{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.foto-grande.poster{max-height:340px;width:auto;max-width:100%;object-fit:contain;margin:0 auto}
+.posters{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.posters button{display:flex;flex-direction:column;gap:3px;border:0;background:none;padding:0;text-align:left;min-width:0;color:inherit}
+.posters img{width:100%;aspect-ratio:2/3;object-fit:cover;border-radius:8px;background:var(--soft)}
+.posters b{font-size:12px;line-height:1.2;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}
+.posters small{font-size:11px;color:var(--muted)}
 .sacar-asp{width:28px;height:28px;border-radius:50%;border:0;background:none;color:var(--muted);font-size:20px;line-height:1;margin-left:2px}
 .sacar-asp:hover{background:var(--line);color:var(--ink,inherit)}
 .asp-voto{display:flex;flex-direction:column;gap:8px;margin-top:8px}
@@ -280,7 +303,7 @@ header.top h1{font-size:34px;line-height:1}
 .giro .cara{display:block;position:relative;width:100%;height:100%;transform-style:preserve-3d;animation:dar .55s both;animation-delay:var(--d)}
 .giro .lado{position:absolute;inset:0;border-radius:9px;display:flex;align-items:center;justify-content:center}
 .giro .dorso{background:var(--soft);border:1.5px solid var(--off);color:var(--muted);animation:tapar .55s both;animation-delay:var(--d)}
-.giro .frente{background:var(--accent);color:var(--accent-ink);transform:rotateY(180deg);font-family:var(--display);font-size:28px;animation:destapar .55s both;animation-delay:var(--d)}
+.giro .frente{background:var(--nota-bg);color:var(--nota-ink);transform:rotateY(180deg);font-family:var(--display);font-size:28px;animation:destapar .55s both;animation-delay:var(--d)}
 /* a mitad del giro, el dorso desaparece y aparece la nota */
 @keyframes tapar{0%,49%{opacity:1}50%,100%{opacity:0}}
 @keyframes destapar{0%,49%{opacity:0}50%,100%{opacity:1}}
@@ -305,10 +328,10 @@ header.top h1{font-size:34px;line-height:1}
 /* ============ MAPA ============ */
 .mapa{height:min(62vh,520px);border-radius:var(--r);border:1px solid var(--line);overflow:hidden;background:var(--soft);z-index:0}
 .mapa-chico{height:200px;border-radius:12px;border:1px solid var(--line);overflow:hidden;background:var(--soft);z-index:0}
-.pin{width:34px;height:34px;border-radius:50% 50% 50% 0;transform:rotate(-45deg);background:var(--accent);border:2px solid var(--surface);display:grid;place-items:center;box-shadow:0 2px 6px rgba(0,0,0,.3)}
+.pin{width:34px;height:34px;border-radius:50% 50% 50% 0;transform:rotate(-45deg);background:var(--c,var(--accent));border:2px solid var(--surface);display:grid;place-items:center;box-shadow:0 2px 6px rgba(0,0,0,.3)}
 .pin b{transform:rotate(45deg);color:var(--accent-ink);font-family:var(--display);font-weight:400;font-size:14px}
 .pin.baja{background:var(--off)}.pin.baja b{color:var(--off-ink)}
-.pin.pendiente{background:var(--surface);border:2px dashed var(--accent)}.pin.pendiente b{color:var(--accent)}
+.pin.pendiente{background:var(--surface);border:2.5px dashed var(--c,var(--accent))}.pin.pendiente b{color:var(--c,var(--accent))}
 .pin.yo{background:var(--accent)}
 .leaflet-popup-content-wrapper,.leaflet-popup-tip{background:var(--surface);color:var(--ink)}
 .leaflet-popup-content{margin:12px 14px;font-family:var(--body);font-size:14px;line-height:1.4}
@@ -326,6 +349,18 @@ a.btn{color:var(--ink)}
 .resultados small{display:block;color:var(--muted);font-size:12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .ubic-fila{display:flex;gap:8px}.ubic-fila input{flex:1;min-width:0}
 .mapa-leyenda{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;font-size:13px;color:var(--muted)}
+.mapa-filtros{display:flex;flex-direction:column;gap:10px}
+.seg{display:grid;grid-template-columns:repeat(3,1fr);gap:4px;padding:4px;border-radius:12px;background:var(--soft)}
+.seg button{height:34px;border:0;border-radius:9px;background:transparent;font-weight:600;font-size:14px;color:var(--muted)}
+.seg button.on{background:var(--surface);color:var(--ink);box-shadow:0 1px 3px rgba(0,0,0,.12)}
+.chips-mapa{display:flex;gap:6px;overflow-x:auto;padding-bottom:2px;scrollbar-width:none}
+.chips-mapa::-webkit-scrollbar{display:none}
+.chip-mapa{flex:none;display:flex;align-items:center;gap:6px;height:32px;padding:0 12px;border-radius:999px;border:1px solid var(--line);background:var(--surface);font-weight:600;font-size:13px;color:var(--muted)}
+.chip-mapa i{width:9px;height:9px;border-radius:50%}
+.chip-mapa.on{background:var(--ink);border-color:var(--ink);color:var(--bg)}
+.mapa-cuenta{font-size:12px;color:var(--muted);display:flex;align-items:center;gap:5px;flex-wrap:wrap}
+.mini-pin{display:inline-block;width:10px;height:10px;border-radius:50% 50% 50% 0;transform:rotate(-45deg);background:var(--muted)}
+.mini-pin.pend{background:transparent;border:1.5px dashed var(--muted)}
 .mapa-leyenda label{display:flex;align-items:center;gap:6px}
 
 /* ============ FOTOS DE PERFIL ============ */
@@ -430,7 +465,8 @@ const S = {
   catSel: null,      // categoría que estás mirando
   vista: 'rank',
   busca: '',
-  mapaTodas: true,   // el mapa muestra todas las categorías o solo la actual         // lo que escribiste en el buscador
+  mapaCats: null,    // qué categorías muestra el mapa (null = todas)
+  mapaEstado: 'todos',   // 'todos', 'hecho' (ya fuimos) o 'pend' (queremos ir)         // lo que escribiste en el buscador
   orden: 'nota',     // cómo se ordena el ranking: 'nota', 'fecha' o 'polemico'     // 'rank' (ranking), 'pend' (pendientes) o 'desac' (desacuerdos)
   confirma: null,    // qué está pidiendo confirmación
   votos: {},        // cuántos votaron cada veredicto: { itemId: 3 }
@@ -490,7 +526,7 @@ const db = {
     ]);
     if (c.error) throw c.error; if (i.error) throw i.error;
     const ids = i.data.map(x => x.id);
-    const p = ids.length ? await sb.from('puntajes').select('item_id,user_id,puntaje,aspectos').in('item_id', ids) : {data:[]};
+    const p = ids.length ? await sb.from('puntajes').select('item_id,user_id,puntaje,aspectos,volveria').in('item_id', ids) : {data:[]};
     if (p.error) throw p.error;
     S.miembros = m.data.filter(r => r.espacio_id === gid).sort((a,b) => (a.unido||'').localeCompare(b.unido||''));
     S.cats = c.data.map(x => ({...x, aspectos: Array.isArray(x.aspectos) ? x.aspectos : []}));
@@ -507,6 +543,7 @@ const db = {
   },
   // Las fotos son privadas: pedimos una dirección temporal (válida por un día) para poder verlas
   async cargarFotos(){
+    S.items.forEach(x => { if (esLink(x.foto)) S.fotos[x.foto] = x.foto; });   // los pósters son links directos
     const faltan = S.items.map(x => x.foto).filter(f => f && !S.fotos[f]);
     if (!faltan.length) return;
     const { data, error } = await sb.storage.from('fotos').createSignedUrls(faltan, 60 * 60 * 24);
@@ -522,7 +559,7 @@ const db = {
     return ruta;
   },
   async borrarFoto(ruta){
-    if (!ruta) return;
+    if (!ruta || esLink(ruta)) return;   // un póster no está guardado en nuestro cajón
     const { error } = await sb.storage.from('fotos').remove([ruta]);
     if (error) console.error(error);   // si falla, no frenamos: la foto vieja queda sin usar
     delete S.fotos[ruta];
@@ -561,13 +598,13 @@ const db = {
       const { error } = await sb.from('puntajes').delete().eq('item_id', itemId).eq('user_id', S.yo); if (error) throw error;
       S.puntajes = S.puntajes.filter(p => p !== antes); return;
     }
-    const fila = { item_id:itemId, user_id:S.yo, puntaje:miNota.puntaje, aspectos:miNota.aspectos || {}, actualizado:new Date().toISOString() };
+    const fila = { item_id:itemId, user_id:S.yo, puntaje:miNota.puntaje, aspectos:miNota.aspectos || {}, volveria:miNota.volveria ?? null, actualizado:new Date().toISOString() };
     const { error } = await sb.from('puntajes').upsert(fila); if (error) throw error;
     if (antes) Object.assign(antes, fila); else S.puntajes.push(fila);
   },
   // Después de votar, pedimos de nuevo las notas: ahora la base de datos te deja ver las de los demás
   async refrescarNotas(itemId, miNota){
-    const { data, error } = await sb.from('puntajes').select('item_id,user_id,puntaje,aspectos').eq('item_id', itemId);
+    const { data, error } = await sb.from('puntajes').select('item_id,user_id,puntaje,aspectos,volveria').eq('item_id', itemId);
     if (error) throw error;
     S.puntajes = S.puntajes.filter(p => p.item_id !== itemId).concat(data.map(x => ({...x, puntaje:Number(x.puntaje), aspectos:x.aspectos || {}})));
     if (miNota) S.votos[itemId] = data.length;
@@ -616,7 +653,7 @@ const db = {
 function notasDe(itemId){
   const notas = jurado().map(m => {
     const p = S.puntajes.find(x => x.item_id === itemId && x.user_id === m.user_id);
-    return { ...m, puntaje: p ? p.puntaje : null, aspectos: p ? p.aspectos : {} };
+    return { ...m, puntaje: p ? p.puntaje : null, aspectos: p ? p.aspectos : {}, volveria: p ? (p.volveria ?? null) : null };
   });
   const hay = notas.filter(n => n.puntaje != null).map(n => n.puntaje);
   const prom = hay.length ? hay.reduce((a,b)=>a+b,0) / hay.length : null;
@@ -627,7 +664,7 @@ function notasDe(itemId){
   return { notas, prom, votos: hay.length, votosTotales: S.votos[itemId] ?? hay.length, rango, mia, oculto, coinc };
 }
 function ranking(catId){
-  const porNota = (a,b) => (b.prom ?? -1) - (a.prom ?? -1) || (b.fecha||'').localeCompare(a.fecha||'') || a.nombre.localeCompare(b.nombre,'es');
+  const porNota = (a,b) => (b.prom ?? -1) - (a.prom ?? -1) || b.votos - a.votos || (b.fecha||'').localeCompare(a.fecha||'') || a.nombre.localeCompare(b.nombre,'es');
   const lista = S.items.filter(x => x.categoria_id === catId && !x.pendiente).map(x => ({...x, ...notasDe(x.id)})).sort(porNota);
   lista.forEach((x, i) => x.puesto = x.prom != null ? i + 1 : null);   // el puesto siempre es por nota, aunque se ordene distinto
   if (S.orden === 'fecha') lista.sort((a,b) => (b.fecha||'').localeCompare(a.fecha||'') || porNota(a,b));
@@ -668,8 +705,26 @@ function tarjeta(n, quien){
   return `<span class="tarjeta${n < 5 ? ' baja' : ''}" aria-label="${esc(quien)}: ${nota(n)}"><b class="num">${nota(n)}</b><small>${esc(inicial(quien))}</small></span>`;
 }
 // En grupos de hasta 4 se ven las tarjetas de cada uno; en grupos más grandes, el promedio
+const esLink = f => /^https?:\/\//i.test(f || '');
+// ¿Es algo que se mira (película, serie)? Cambia la pregunta de "¿Volverías?" y permite buscar pósters
+const esObra = cat => /pel[ií]cula|cine|film|serie|document|libro/i.test(cat?.nombre || '');
+const esPeliOSerie = cat => /pel[ií]cula|cine|film|serie|document/i.test(cat?.nombre || '');
+function frases(cat){ return esObra(cat)
+  ? { pregunta:'¿La recomendarías?', vos:'la recomendarías', uno:'la recomendaría', varios:'la recomendarían', noUno:'no la recomendaría', noVarios:'No la recomendarían' }
+  : { pregunta:'¿Volverías?', vos:'volverías', uno:'volvería', varios:'volverían', noUno:'no volvería', noVarios:'No volverían' }; }
+// "Los dos volverían", "Solo Juan volvería"...
+function textoVolveria(x, cat){
+  const r = x.notas.filter(n => n.puntaje != null && n.volveria != null); if (!r.length) return '';
+  const f = frases(cat), si = r.filter(n => n.volveria), quien = n => n.user_id === S.yo ? 'vos' : n.nombre;
+  const may = t => t.charAt(0).toUpperCase() + t.slice(1), soyYo = n => n.user_id === S.yo;
+  if (si.length === r.length) return r.length === 1 ? (soyYo(r[0]) ? may(f.vos) : `${r[0].nombre} ${f.uno}`) : (r.length === 2 ? `Los dos ${f.varios}` : `Todos ${f.varios}`);
+  if (!si.length) return r.length === 1 ? (soyYo(r[0]) ? may('no ' + f.vos) : `${r[0].nombre} ${f.noUno}`) : f.noVarios;
+  if (si.length === 1) return `Solo ${quien(si[0])} ${soyYo(si[0]) ? f.vos : f.uno}`;
+  return `${si.length} de ${r.length} ${f.varios}`;
+}
 function notasFila(x){
-  if (S.miembros.length <= 4) return `<span class="tarjetas">${x.notas.map((n, i) => x.oculto && i > 0 ? tarjetaOculta(n.nombre) : tarjeta(n.puntaje, n.nombre)).join('')}</span>`;
+  const prom = !x.oculto && x.votos >= 2 ? `<span class="prom-fila" aria-label="Promedio ${nota(Math.round(x.prom * 10) / 10)}"><b class="num">${nota(Math.round(x.prom * 10) / 10)}</b><small>prom.</small></span>` : '';
+  if (S.miembros.length <= 4) return `<span class="tarjetas">${prom}${x.notas.map((n, i) => x.oculto && i > 0 ? tarjetaOculta(n.nombre) : tarjeta(n.puntaje, n.nombre)).join('')}</span>`;
   return `<span class="promedio${x.prom == null ? ' falta' : ''}" aria-label="Promedio ${nota(x.prom)}"><b class="num">${x.prom == null ? '?' : nota(Math.round(x.prom * 10) / 10)}</b></span>`;
 }
 function miniatura(x){ return x.foto && S.fotos[x.foto] ? `<img class="mini" src="${esc(S.fotos[x.foto])}" alt="" loading="lazy">` : ''; }
@@ -677,7 +732,7 @@ function subFila(x){
   if (x.oculto) return {t: x.votosTotales ? `Votá para ver las notas · ${x.votosTotales} ${x.votosTotales === 1 ? 'ya votó' : 'ya votaron'}` : 'Todavía nadie votó', choque:false, oculto:true};
   if (S.miembros.length === 2 && x.votos === 2 && x.rango >= 3) return {t:`No coinciden: ${x.notas.map(n => nota(n.puntaje)).join(' contra ')}`, choque:true};
   if (S.miembros.length > 2 && x.votos >= 2 && x.rango >= 4) return {t:`Polémico: de ${nota(Math.min(...x.notas.filter(n=>n.puntaje!=null).map(n=>n.puntaje)))} a ${nota(Math.max(...x.notas.filter(n=>n.puntaje!=null).map(n=>n.puntaje)))}`, choque:true};
-  const partes = [x.lugar, fechaLinda(x.fecha)];
+  const partes = [x.lugar, textoVolveria(x, S.cats.find(c => c.id === x.categoria_id)), fechaLinda(x.fecha)];
   if (S.miembros.length > 4) partes.push(`${x.votos} de ${S.miembros.length} votaron`);
   return {t: partes.filter(Boolean).join(' · '), choque:false};
 }
@@ -693,9 +748,16 @@ function render(){
   // Si estás solo en el grupo, el aviso para invitar
   if (!otros().length) html += `<div class="invitar"><p>Pasale este código a quienes quieras sumar a <b>${esc(grupo().nombre)}</b>:</p>
       <span class="codigo">${esc(grupo().codigo)}</span><button class="btn chico" data-a="copiar">Copiar</button></div>`;
+  // ¿Hay veredictos que otros ya votaron y vos todavía no?
+  const meFaltan = S.items.filter(x => !x.pendiente).map(x => ({...x, ...notasDe(x.id)})).filter(x => x.mia == null && x.votosTotales > 0);
+  if (meFaltan.length) html += `<button class="aviso-voto" data-a="abrir" data-id="${meFaltan[0].id}"><span class="punto" aria-hidden="true"></span>
+      <span>${meFaltan.length === 1 ? `<b>${esc(meFaltan[0].nombre)}</b> está esperando tu nota` : `<b>${meFaltan.length} veredictos</b> esperan tu nota · empezá por ${esc(meFaltan[0].nombre)}`}</span><span aria-hidden="true">›</span></button>`;
   // La tarjeta de coincidencia (en pareja) o de polémicos (en grupo)
   if (otros().length && comparables().length){
-    if (S.miembros.length === 2){
+    if (S.miembros.length === 2 && comparables().length < 3){
+      const faltan = 3 - comparables().length;
+      html += `<div class="afinidad suave"><span><b>¿Qué tan de acuerdo están?</b><br><span>Puntúen ${faltan === 1 ? '1 veredicto más' : `${faltan} veredictos más`} los dos y lo descubren.</span></span></div>`;
+    } else if (S.miembros.length === 2){
       const c = coincidencia();
       const n = comparables().filter(x => x.rango >= 3).length;
       const t = comparables().length;
@@ -733,10 +795,14 @@ function render(){
       <button role="tab" aria-selected="${S.vista==='pend'}" class="${S.vista==='pend'?'on':''}" data-a="vista" data-v="pend">Pendientes (${pend.length})</button>
       <button role="tab" aria-selected="${S.vista==='mapa'}" class="${S.vista==='mapa'?'on':''}" data-a="vista" data-v="mapa">Mapa</button></div>`;
   if (S.vista === 'mapa'){
-    html += `<div class="mapa-leyenda"><span>${conUbicacion().length} ${conUbicacion().length === 1 ? 'lugar' : 'lugares'} en el mapa</span>
-      <label><input type="checkbox" id="mapaTodas"${S.mapaTodas ? ' checked' : ''}> Todas las categorías</label></div>
+    const cuantos = conUbicacion().length, estados = [['todos','Todos'],['hecho','Ya fuimos'],['pend','Queremos ir']];
+    html += `<div class="mapa-filtros">
+      <div class="seg" role="radiogroup" aria-label="Qué lugares mostrar">${estados.map(([v, t]) => `<button type="button" role="radio" aria-checked="${S.mapaEstado === v}" class="${S.mapaEstado === v ? 'on' : ''}" data-a="mapaEstado" data-v="${v}">${t}</button>`).join('')}</div>
+      <div class="chips-mapa" aria-label="Categorías en el mapa"><button type="button" class="chip-mapa${!S.mapaCats ? ' on' : ''}" data-a="mapaCat" aria-pressed="${!S.mapaCats}">Todas</button>${S.cats.map(c => { const on = !!S.mapaCats && S.mapaCats.includes(c.id);
+        return `<button type="button" class="chip-mapa${on ? ' on' : ''}" data-a="mapaCat" data-id="${c.id}" aria-pressed="${on}"><i style="background:${colorCat(c.id)}"></i>${esc(c.nombre)}</button>`; }).join('')}</div>
+      <span class="mapa-cuenta">${cuantos} ${cuantos === 1 ? 'lugar' : 'lugares'} en el mapa · <i class="mini-pin"></i> ya fueron · <i class="mini-pin pend"></i> quieren ir</span></div>
       <div id="mapa" class="mapa" role="region" aria-label="Mapa de lugares"></div>
-      ${conUbicacion().length ? '' : `<section class="card"><p class="vacio">Todavía no hay lugares con ubicación${S.mapaTodas ? '' : ` en ${esc(cat.nombre)}`}.<br>Al cargar o editar un veredicto, buscá el lugar en <b>Ubicación</b>.</p></section>`}`;
+      ${conUbicacion().length ? '' : `<section class="card"><p class="vacio">Todavía no hay lugares con ubicación con estos filtros.<br>Al cargar o editar un veredicto o un pendiente, buscá el lugar en <b>Ubicación</b>.</p></section>`}`;
   } else if (S.vista === 'pend'){
     if (!pend.length) html += `<section class="card"><p class="vacio">No hay pendientes en ${esc(cat.nombre)}.<br>Anoten acá lo que quieren probar.</p></section>`;
     else html += `<div class="lista">${pend.map(x => `<div class="item"><span class="pend" aria-hidden="true"></span>
@@ -784,12 +850,17 @@ function centroGrupo(){
   if (!ls.length) return { lat: -34.6037, lng: -58.3816 };
   return { lat: ls.reduce((s,x) => s + x.lat, 0) / ls.length, lng: ls.reduce((s,x) => s + x.lng, 0) / ls.length };
 }
-const conUbicacion = () => S.items.filter(x => x.lat != null && x.lng != null && (S.mapaTodas || x.categoria_id === S.catSel));
+const conUbicacion = () => S.items.filter(x => x.lat != null && x.lng != null
+  && (!S.mapaCats || S.mapaCats.includes(x.categoria_id))
+  && (S.mapaEstado === 'todos' || (S.mapaEstado === 'pend') === !!x.pendiente));
+// Cada categoría tiene su color en el mapa
+const COLORES_CAT = ['#8E1B2A', '#2F6B5E', '#3B5BA5', '#B7791F', '#7B4F9E', '#C2562B', '#4A6B2A', '#9C3D6E'];
+const colorCat = id => COLORES_CAT[Math.max(0, S.cats.findIndex(c => c.id === id)) % COLORES_CAT.length];
 function iconoPin(x){
   const n = x.pendiente ? null : notasDe(x.id);
   const txt = x.pendiente ? '·' : n.oculto ? '?' : n.prom != null ? nota(Math.round(n.prom)) : '–';
   const clase = x.pendiente ? 'pendiente' : (n.prom != null && n.prom < 5 && !n.oculto ? 'baja' : '');
-  return L.divIcon({ className:'', html:`<div class="pin ${clase}"><b class="num">${txt}</b></div>`, iconSize:[34,34], iconAnchor:[17,34], popupAnchor:[0,-30] });
+  return L.divIcon({ className:'', html:`<div class="pin ${clase}" style="--c:${colorCat(x.categoria_id)}"><b class="num">${txt}</b></div>`, iconSize:[34,34], iconAnchor:[17,34], popupAnchor:[0,-30] });
 }
 const comoLlegar = x => `https://www.google.com/maps/dir/?api=1&destination=${x.lat},${x.lng}`;
 function dibujarMapa(){
@@ -1059,7 +1130,8 @@ function abrirHoja(itemId, opciones = {}){
   H.aspCat = cat.aspectos;
   const yaPuestos = Object.keys(mia?.aspectos || {});
   H.aspectos = yaPuestos.length ? [...cat.aspectos.filter(a => yaPuestos.includes(a)), ...yaPuestos.filter(a => !cat.aspectos.includes(a))] : [...cat.aspectos];
-  H.agregandoAsp = false;
+  H.agregandoAsp = false; H.cat = cat; H.nombreItem = x?.nombre || '';
+  H.volveria = mia?.volveria ?? null; H.poster = null; H.posters = null;
   H.archivo = null; H.quitarFoto = false; H.fotoActual = x?.foto || null;
   H.lat = x?.lat ?? null; H.lng = x?.lng ?? null; H.aMano = false; H.mundo = false; H.ubicTexto = x ? [x.nombre, x.lugar].filter(Boolean).join(', ') : ''; H.resultados = [];
   H.pendiente = opciones.yaFuimos ? false : (x ? x.pendiente : S.vista === 'pend');
@@ -1076,6 +1148,7 @@ function abrirHoja(itemId, opciones = {}){
     ${x && !x.pendiente && otrasNotas.length ? bloqueGrupo(n) : ''}
     <div class="campo" id="zonaNota"${H.pendiente ? ' hidden' : ''}><label>Tu nota</label>
       <div id="notaControles"${sinNota ? ' hidden' : ''}>${controlesNota()}</div>
+      <div class="volveria" id="zonaVolveria"></div>
       <label class="sinnota"><input type="checkbox" id="fSinNota"${sinNota ? ' checked' : ''}> Todavía no lo puntué</label>
     </div>
     <div class="campo"><label>Foto <span style="font-weight:400">(opcional)</span></label><div id="zonaFoto"></div>
@@ -1100,18 +1173,54 @@ function abrirHoja(itemId, opciones = {}){
   $('#fNombre').oninput = () => $('#eNombre').hidden = true;
   conectarRango();
   dibujarFoto();
+  dibujarVolveria();
   dibujarUbicacion();
-  $('#fFoto').onchange = e => { const f = e.target.files[0]; if (f){ H.archivo = f; H.quitarFoto = false; dibujarFoto(); } };
+  $('#fFoto').onchange = e => { const f = e.target.files[0]; if (f){ H.archivo = f; H.poster = null; H.posters = null; H.quitarFoto = false; dibujarFoto(); } };
   if (!x) setTimeout(() => $('#fNombre').focus(), 60);
 }
 // La zona de la foto dentro de la ventana: vacía, con la foto actual o con la que acabás de elegir
 const ICONO_FOTO = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8h3l2-3h6l2 3h3v11H4z"/><circle cx="12" cy="13" r="3.5"/></svg>';
 function dibujarFoto(){
-  const url = H.archivo ? URL.createObjectURL(H.archivo) : (!H.quitarFoto && H.fotoActual ? S.fotos[H.fotoActual] : null);
-  $('#zonaFoto').innerHTML = url
-    ? `<img class="foto-grande" src="${esc(url)}" alt="Foto del veredicto"><div class="foto-botones" style="margin-top:8px">
-        <button type="button" class="btn chico" data-a="elegirFoto">Cambiar foto</button><button type="button" class="btn chico dan" data-a="quitarFoto">Quitar</button></div>`
-    : `<button type="button" class="foto-vacia" data-a="elegirFoto">${ICONO_FOTO} Agregar foto</button>`;
+  const url = H.archivo ? URL.createObjectURL(H.archivo) : H.poster ? H.poster : (!H.quitarFoto && H.fotoActual ? S.fotos[H.fotoActual] : null);
+  const conPoster = esPeliOSerie(H.cat);
+  const esPoster = H.poster || (!H.archivo && !H.quitarFoto && esLink(H.fotoActual));
+  let html = url
+    ? `<img class="foto-grande${esPoster ? ' poster' : ''}" src="${esc(url)}" alt="Foto del veredicto"><div class="foto-botones" style="margin-top:8px">
+        <button type="button" class="btn chico" data-a="elegirFoto">${esPoster ? 'Usar una foto' : 'Cambiar foto'}</button>${conPoster ? '<button type="button" class="btn chico" data-a="buscarPoster">Otro póster</button>' : ''}<button type="button" class="btn chico dan" data-a="quitarFoto">Quitar</button></div>`
+    : conPoster
+      ? `<div class="foto-dos"><button type="button" class="foto-vacia" data-a="buscarPoster">${ICONO_PELI} Buscar póster</button><button type="button" class="foto-vacia" data-a="elegirFoto">${ICONO_FOTO} Subir foto</button></div>`
+      : `<button type="button" class="foto-vacia" data-a="elegirFoto">${ICONO_FOTO} Agregar foto</button>`;
+  if (H.posters) html += H.posters === 'buscando' ? '<p class="vacio" style="font-size:14px">Buscando pósters…</p>'
+    : typeof H.posters === 'string' ? `<p class="vacio" style="font-size:14px">${esc(H.posters)}</p>`
+    : `<p style="margin:10px 0 6px;font-size:13px;color:var(--muted)">Tocá el póster correcto:</p><div class="posters">${H.posters.map((p, i) => `<button type="button" data-a="elegirPoster" data-i="${i}"><img src="${esc(p.chico)}" alt="" loading="lazy"><b>${esc(p.titulo)}</b><small>${esc(p.anio)}</small></button>`).join('')}</div>`;
+  $('#zonaFoto').innerHTML = html;
+}
+const ICONO_PELI = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="3" width="16" height="18" rx="2"/><path d="M8 3v18M16 3v18M4 8h4M4 13h4M16 8h4M16 13h4"/></svg>';
+// PÓSTERS: los buscamos en el catálogo de Apple (iTunes), que es gratis y no pide registrarse
+async function buscarPosters(){
+  const nombre = $('#fNombre').value.trim();
+  if (!nombre){ H.posters = 'Primero escribí el nombre.'; dibujarFoto(); $('#fNombre').focus(); return; }
+  H.posters = 'buscando'; dibujarFoto();
+  const serie = /serie/i.test(H.cat?.nombre || '');
+  const url = `https://itunes.apple.com/search?country=AR&limit=10&media=${serie ? 'tvShow&entity=tvSeason' : 'movie'}&term=` + encodeURIComponent(nombre);
+  try {
+    let datos; try { datos = await traerJSON(url); } catch(e){ datos = await traerJSONP(url); }
+    const vistos = new Set();
+    const lista = (datos?.results || []).filter(r => r.artworkUrl100).map(r => ({
+      titulo: r.trackName || r.collectionName || nombre, anio: (r.releaseDate || '').slice(0, 4),
+      chico: r.artworkUrl100.replace(/\d+x\d+bb/, serie ? '200x200bb' : '200x300bb'),
+      grande: r.artworkUrl100.replace(/\d+x\d+bb/, serie ? '600x600bb' : '600x900bb') }))
+      .filter(p => !vistos.has(p.grande) && vistos.add(p.grande)).slice(0, 6);
+    H.posters = lista.length ? lista : 'No encontramos pósters con ese nombre. Probá escribirlo como figura en los cines, o subí una foto.';
+  } catch(e){ console.error(e); H.posters = 'No se pudo buscar. Revisá tu conexión y probá de nuevo.'; }
+  dibujarFoto();
+}
+// ¿Volverías? / ¿La recomendarías?: Sí o No (tocando de nuevo, lo dejás sin responder)
+function dibujarVolveria(){
+  const z = $('#zonaVolveria'); if (!z) return;
+  z.innerHTML = `<span>${frases(H.cat).pregunta}</span><span class="sino">
+    <button type="button" data-a="volveria" data-v="si" class="${H.volveria === true ? 'on' : ''}" aria-pressed="${H.volveria === true}">Sí</button>
+    <button type="button" data-a="volveria" data-v="no" class="${H.volveria === false ? 'on no' : ''}" aria-pressed="${H.volveria === false}">No</button></span>`;
 }
 // Achica la foto antes de subirla: como mucho 1280 píxeles de lado, en JPEG
 // Foto de perfil: recorte cuadrado del centro, de 400 x 400 píxeles
@@ -1161,7 +1270,8 @@ const ordenAsp = ks => [...(H.aspCat || []).filter(a => ks.includes(a)), ...ks.f
 // El veredicto del grupo para un ítem: promedio, coincidencia y la nota de cada uno
 function bloqueGrupo(n){
   if (n.oculto) return `<div class="sellado">${CANDADO}<span>${n.votosTotales ? `${n.votosTotales} ${n.votosTotales === 1 ? 'persona ya votó' : 'personas ya votaron'}` : 'Todavía nadie votó'}. Poné tu nota para ver las de los demás.</span></div>`;
-  const filas = n.notas.map((o, i) => `<div class="otro">${avatar(o, 32)}${tarjeta(o.puntaje, o.nombre)}<span style="min-width:0"><b>${i === 0 ? 'Vos' : esc(o.nombre)}</b>${o.puntaje == null ? ' <span class="asp-otros">todavía no votó</span>' : ''}
+  const f = frases(H.cat), linkApp = location.origin + location.pathname;
+  const filas = n.notas.map((o, i) => `<div class="otro">${avatar(o, 32)}${tarjeta(o.puntaje, o.nombre)}<span style="min-width:0"><b>${i === 0 ? 'Vos' : esc(o.nombre)}</b>${o.puntaje == null ? ` <span class="asp-otros">todavía no votó</span>${i > 0 ? ` <a class="avisar" href="https://wa.me/?text=${encodeURIComponent(`¡${o.nombre}, te falta votar ${H.nombreItem} en Veredicto! ${linkApp}`)}" target="_blank" rel="noopener">Avisarle</a>` : ''}` : ''}${o.puntaje != null && o.volveria != null ? `<span class="asp-otros"> · ${i === 0 ? (o.volveria ? f.vos : 'no ' + f.vos) : (o.volveria ? f.uno : f.noUno)}</span>` : ''}
       ${o.puntaje != null && Object.keys(o.aspectos || {}).length ? `<br><span class="asp-otros">${ordenAsp(Object.keys(o.aspectos)).map(a => `${esc(a)} ${nota(o.aspectos[a])}`).join(' · ')}</span>` : ''}</span></div>`).join('');
   return `<div class="grupo-veredicto"><p class="eyebrow">Veredicto del grupo</p>
     <div class="gv-cab"><div><span class="gv-nota num">${n.prom == null ? '–' : nota(Math.round(n.prom * 10) / 10)}</span><span class="gv-de">promedio de ${n.votos} ${n.votos === 1 ? 'nota' : 'notas'}</span></div>
@@ -1242,10 +1352,10 @@ async function guardarItem(form){
   let miNota;   // undefined = no tocar la nota (pendientes)
   if (!H.pendiente){
     if ($('#fSinNota').checked) miNota = null;
-    else if (H.aspectos.length) miNota = { puntaje: notaGeneral(), aspectos: Object.fromEntries(H.aspectos.map(a => [a, H.asp[a]])) };
-    else miNota = { puntaje: H.nota, aspectos: {} };
+    else if (H.aspectos.length) miNota = { puntaje: notaGeneral(), aspectos: Object.fromEntries(H.aspectos.map(a => [a, H.asp[a]])), volveria: H.volveria };
+    else miNota = { puntaje: H.nota, aspectos: {}, volveria: H.volveria };
   }
-  const archivo = H.archivo, quitar = H.quitarFoto, fotoVieja = previo?.foto || null;
+  const archivo = H.archivo, quitar = H.quitarFoto, poster = H.poster, fotoVieja = previo?.foto || null;
   // ¿Es la primera vez que votás algo que otros ya votaron? Entonces, después de guardar, se revelan sus notas
   const antes = previo && !previo.pendiente ? notasDe(id) : null;
   const votoNuevo = miNota && (!antes || antes.mia == null);
@@ -1255,6 +1365,7 @@ async function guardarItem(form){
   const eraPend = previo?.pendiente;
   const ok = await seguro(async () => {
     if (archivo){ toast('Subiendo la foto…'); fila.foto = await db.subirFoto(id, await achicar(archivo)); }
+    else if (poster){ fila.foto = poster; S.fotos[poster] = poster; }
     else if (quitar) fila.foto = null;
     await db.guardarItem(fila, miNota);
     if (fotoVieja && fila.foto !== fotoVieja) await db.borrarFoto(fotoVieja);   // la foto anterior ya no se usa
@@ -1394,7 +1505,12 @@ document.addEventListener('click', async e => {
   const sugAsp = e.target.closest('[data-sugasp]'); if (sugAsp){ sumarAspecto(sugAsp.dataset.sugasp); return; }
   const b = e.target.closest('[data-a]'); if (!b) return;
   const a = b.dataset.a, id = b.dataset.id;
-  if (a === 'cat'){ S.catSel = id; S.confirma = null; if (S.vista === 'desac') S.vista = 'rank'; render(); }
+  if (a === 'cat'){ S.catSel = id; S.confirma = null; if (S.vista === 'desac') S.vista = 'rank'; if (S.vista === 'mapa') S.mapaCats = [id]; render(); }
+  else if (a === 'mapaEstado'){ S.mapaEstado = b.dataset.v; render(); }
+  else if (a === 'mapaCat'){
+    if (!id) S.mapaCats = null;
+    else { const sel = new Set(S.mapaCats || []); sel.has(id) ? sel.delete(id) : sel.add(id); S.mapaCats = sel.size ? [...sel] : null; }
+    render(); }
   else if (a === 'vista'){ S.vista = b.dataset.v; S.confirma = null; render(); }
   else if (a === 'desac'){ S.vista = 'desac'; render(); scrollTo(0,0); }
   else if (a === 'volverRank'){ S.vista = 'rank'; render(); }
@@ -1403,6 +1519,9 @@ document.addEventListener('click', async e => {
   else if (a === 'editarCat'){ S.confirma = S.confirma === 'menuCat' ? null : 'menuCat'; render(); }
   else if (a === 'aspectos') abrirAspectos();
   else if (a === 'agregarAsp'){ sumarAspecto($('#nuevoAsp').value); $('#nuevoAsp').value = ''; $('#nuevoAsp').focus(); }
+  else if (a === 'volveria'){ const v = b.dataset.v === 'si'; H.volveria = H.volveria === v ? null : v; dibujarVolveria(); }
+  else if (a === 'buscarPoster') buscarPosters();
+  else if (a === 'elegirPoster'){ H.poster = H.posters[Number(b.dataset.i)].grande; H.posters = null; H.archivo = null; H.quitarFoto = false; dibujarFoto(); }
   else if (a === 'sacarAspVoto'){ const q = H.aspectos[Number(b.dataset.i)]; if (H.aspectos.length === 1) H.nota = H.asp[q]; H.aspectos = H.aspectos.filter(x => x !== q); redibujarNota(); }
   else if (a === 'volverAspVoto'){ const n = b.dataset.n; if (!H.aspectos.includes(n)){ if (!H.aspectos.length) H.asp[n] = H.nota; H.aspectos.push(n); H.aspectos = ordenAsp(H.aspectos); } redibujarNota(); }
   else if (a === 'abrirAspVoto'){ H.agregandoAsp = true; redibujarNota(); }
@@ -1425,7 +1544,7 @@ document.addEventListener('click', async e => {
   else if (a === 'elegirFoto') $('#fFoto').click();
   else if (a === 'elegirAvatar') $('#fAvatar').click();
   else if (a === 'quitarAvatar'){ cerrarHoja(); await seguro(() => db.cambiarAvatar(null), 'Foto de perfil quitada'); }
-  else if (a === 'quitarFoto'){ H.archivo = null; H.quitarFoto = true; $('#fFoto').value = ''; dibujarFoto(); }
+  else if (a === 'quitarFoto'){ H.archivo = null; H.poster = null; H.posters = null; H.quitarFoto = true; $('#fFoto').value = ''; dibujarFoto(); }
   else if (a === 'pedirBorrarItem'){
     $('#zonaBorrar').innerHTML = `<div class="confirma"><span>¿Borrar esto y las notas de todo el grupo?</span>
       <button type="button" class="btn chico" data-a="noBorrarItem">No</button><button type="button" class="btn chico dan" data-a="borrarItem">Sí, borrar</button></div>`; }
@@ -1493,7 +1612,6 @@ document.addEventListener('submit', async e => {
 $('#buscar').addEventListener('input', e => { S.busca = e.target.value; S.confirma = null; render(); });
 document.addEventListener('change', e => {
   if (e.target.id === 'orden'){ S.orden = e.target.value; render(); }
-  if (e.target.id === 'mapaTodas'){ S.mapaTodas = e.target.checked; render(); }
 });
 // Enter en el campo de ubicación busca, en lugar de guardar el veredicto
 document.addEventListener('keydown', e => { if (e.key === 'Enter' && e.target.id === 'nuevoAspVoto'){ e.preventDefault(); sumarAspVoto(); } });
