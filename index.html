@@ -8,6 +8,9 @@
 <link rel="icon" type="image/png" href="favicon.png">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <link rel="manifest" href="manifest.json">
+<!-- Leaflet: la librería del mapa (libre y gratis, sin registro) -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Gloock&family=Figtree:wght@400;500;600;700&display=swap">
@@ -39,6 +42,7 @@
 /* Sin zoom: el celular no agranda la pantalla al tocar un campo ni con doble toque */
 html{touch-action:manipulation;-webkit-text-size-adjust:100%}
 input,select,textarea{font-size:16px!important}
+select.orden{font-size:16px!important}
 *{box-sizing:border-box}
 html{padding-top:env(safe-area-inset-top,0px)}
 body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--body);font-size:15px;line-height:1.5;
@@ -228,6 +232,86 @@ header.top h1{font-size:34px;line-height:1}
 .gv-coinc b{font-family:var(--display);font-weight:400;font-size:24px;line-height:1.1}
 .gv-coinc span{font-size:13px;color:var(--muted)}
 
+/* ============ BIENVENIDA: las tres tarjetas se abren en abanico ============ */
+.splash{position:fixed;inset:0;z-index:100;background:#8E1B2A;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:22px;transition:opacity .45s ease}
+.splash.fuera{opacity:0;pointer-events:none}
+.splash .abanico{position:relative;width:170px;height:120px}
+.splash .carta{position:absolute;left:50%;bottom:0;width:62px;height:84px;margin-left:-31px;border-radius:9px;background:#FFFBF2;display:grid;place-items:center;
+  transform-origin:50% 100%;box-shadow:0 6px 18px rgba(0,0,0,.25);animation:abrir .6s cubic-bezier(.2,.9,.3,1.2) both}
+.splash .carta svg{width:30px;height:30px}
+.splash .c1{--r:-24deg;--x:-46px;animation-delay:.25s}
+.splash .c3{--r:24deg;--x:46px;animation-delay:.25s}
+.splash .c2{--r:0deg;--x:0px;z-index:1;animation-delay:.1s;width:70px;height:94px;margin-left:-35px}
+@keyframes abrir{from{transform:translateX(0) rotate(0) translateY(30px);opacity:0}to{transform:translateX(var(--x)) rotate(var(--r));opacity:1}}
+.splash h1{color:#FFFBF2;font-size:46px;animation:aparecer .5s .75s both}
+@keyframes aparecer{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+
+/* ============ SELLO AL DICTAR Y REVELACIÓN DE NOTAS ============ */
+.escena{position:fixed;inset:0;z-index:60;display:flex;align-items:center;justify-content:center;background:rgba(20,10,12,.55);animation:fundir .2s both}
+.escena.fuera{animation:fundirFuera .3s both}
+@keyframes fundir{from{opacity:0}}
+@keyframes fundirFuera{to{opacity:0}}
+.sello-golpe{width:150px;height:150px;border-radius:50%;background:var(--accent);color:var(--accent-ink);display:flex;flex-direction:column;align-items:center;justify-content:center;
+  border:4px dashed var(--accent-ink);outline:6px solid var(--accent);animation:golpe .45s cubic-bezier(.3,1.6,.5,1) both}
+.sello-golpe b{font-family:var(--display);font-weight:400;font-size:64px;line-height:1}
+.sello-golpe small{font-size:12px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;margin-top:2px}
+@keyframes golpe{from{transform:scale(2.4) rotate(-14deg);opacity:0}60%{opacity:1}to{transform:scale(1) rotate(-8deg)}}
+.revela{background:var(--surface);border-radius:20px;padding:24px 20px;width:min(92vw,420px);display:flex;flex-direction:column;align-items:center;gap:16px;text-align:center;animation:golpe2 .3s both}
+@keyframes golpe2{from{transform:translateY(16px);opacity:0}}
+.revela h3{font-size:24px;margin:0}
+.revela .mesa{display:flex;flex-wrap:wrap;justify-content:center;gap:12px}
+.revela .juez{display:flex;flex-direction:column;align-items:center;gap:6px;font-size:13px;font-weight:600;color:var(--muted);max-width:72px}
+.revela .juez span:last-child{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:72px}
+/* cada tarjeta tiene dos caras: el dorso (con el candado) y el frente (la nota) */
+.giro{display:block;width:56px;height:70px;perspective:600px}
+.giro .cara{display:block;position:relative;width:100%;height:100%;transform-style:preserve-3d;animation:dar .55s both;animation-delay:var(--d)}
+.giro .lado{position:absolute;inset:0;border-radius:9px;display:flex;align-items:center;justify-content:center}
+.giro .dorso{background:var(--soft);border:1.5px solid var(--off);color:var(--muted);animation:tapar .55s both;animation-delay:var(--d)}
+.giro .frente{background:var(--accent);color:var(--accent-ink);transform:rotateY(180deg);font-family:var(--display);font-size:28px;animation:destapar .55s both;animation-delay:var(--d)}
+/* a mitad del giro, el dorso desaparece y aparece la nota */
+@keyframes tapar{0%,49%{opacity:1}50%,100%{opacity:0}}
+@keyframes destapar{0%,49%{opacity:0}50%,100%{opacity:1}}
+.giro .frente.baja{background:var(--off);color:var(--off-ink)}
+@keyframes dar{from{transform:rotateY(0)}to{transform:rotateY(180deg)}}
+.revela .final{display:flex;flex-direction:column;align-items:center;gap:2px;animation:aparecer .4s both;animation-delay:var(--d)}
+.revela .final b{font-family:var(--display);font-weight:400;font-size:52px;line-height:1;color:var(--accent)}
+.revela .final span{font-size:14px;color:var(--muted)}
+@media (prefers-reduced-motion:reduce){.splash *,.escena,.escena *,.revela,.revela *{animation-duration:.01s!important;animation-delay:0s!important}}
+
+/* ============ BUSCADOR Y ORDEN ============ */
+.busqueda{position:relative}
+.busqueda svg{position:absolute;left:14px;top:50%;width:18px;height:18px;transform:translateY(-50%);color:var(--muted);pointer-events:none}
+.busqueda input{width:100%;height:46px;border:1px solid var(--line);border-radius:12px;background:var(--surface);padding:0 14px 0 42px}
+.busqueda input:focus{border-color:var(--accent);outline:none}
+.orden{height:34px;border:1px solid var(--line);border-radius:10px;background:var(--surface);padding:0 10px;font-size:13px;font-weight:600;color:var(--ink)}
+.rank-acc{display:flex;align-items:center;gap:12px}
+.etq{display:inline-block;font-size:11px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:var(--accent);margin-right:6px}
+
+/* ============ MAPA ============ */
+.mapa{height:min(62vh,520px);border-radius:var(--r);border:1px solid var(--line);overflow:hidden;background:var(--soft);z-index:0}
+.mapa-chico{height:200px;border-radius:12px;border:1px solid var(--line);overflow:hidden;background:var(--soft);z-index:0}
+.pin{width:34px;height:34px;border-radius:50% 50% 50% 0;transform:rotate(-45deg);background:var(--accent);border:2px solid var(--surface);display:grid;place-items:center;box-shadow:0 2px 6px rgba(0,0,0,.3)}
+.pin b{transform:rotate(45deg);color:var(--accent-ink);font-family:var(--display);font-weight:400;font-size:14px}
+.pin.baja{background:var(--off)}.pin.baja b{color:var(--off-ink)}
+.pin.pendiente{background:var(--surface);border:2px dashed var(--accent)}.pin.pendiente b{color:var(--accent)}
+.pin.yo{background:var(--accent)}
+.leaflet-popup-content-wrapper,.leaflet-popup-tip{background:var(--surface);color:var(--ink)}
+.leaflet-popup-content{margin:12px 14px;font-family:var(--body);font-size:14px;line-height:1.4}
+.pop b{font-size:15px}.pop small{color:var(--muted)}
+a.btn{color:var(--ink)}
+.vistas button{font-size:14px;line-height:1.15}
+.pop .acc{display:flex;gap:6px;margin-top:8px}
+.leaflet-container a.leaflet-popup-close-button{color:var(--muted)}
+.leaflet-control-attribution{font-size:10px}
+.resultados{display:flex;flex-direction:column;border:1px solid var(--line);border-radius:12px;overflow:hidden}
+.resultados button{text-align:left;border:0;border-bottom:1px solid var(--line);background:var(--bg);padding:10px 12px;font-size:14px}
+.resultados button:last-child{border-bottom:0}
+.resultados button:hover{background:var(--soft)}
+.resultados small{display:block;color:var(--muted);font-size:12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ubic-fila{display:flex;gap:8px}.ubic-fila input{flex:1;min-width:0}
+.mapa-leyenda{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;font-size:13px;color:var(--muted)}
+.mapa-leyenda label{display:flex;align-items:center;gap:6px}
+
 /* ============ FOTOS DE PERFIL ============ */
 .avatar{border-radius:50%;object-fit:cover;flex:none;display:inline-grid;place-items:center;background:var(--soft);color:var(--accent);font-family:var(--display);border:1.5px solid var(--line)}
 .mi-foto{display:flex;align-items:center;gap:14px;flex-wrap:wrap}
@@ -243,6 +327,16 @@ header.top h1{font-size:34px;line-height:1}
 </style>
 </head>
 <body>
+
+<!-- ============ BIENVENIDA: las tres tarjetas del logo se abren en abanico ============ -->
+<div id="splash" class="splash" aria-hidden="true">
+  <div class="abanico">
+    <span class="carta c1"><svg viewBox="0 0 24 24" fill="#8E1B2A"><path d="M4 9h16v10a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1z"/><path d="M4 4.5l15-3 1 3.8-15 3z"/></svg></span>
+    <span class="carta c3"><svg viewBox="0 0 24 24" fill="#8E1B2A"><circle cx="12" cy="8" r="5"/><path d="M8 12l4 10 4-10z"/></svg></span>
+    <span class="carta c2"><svg viewBox="0 0 24 24" fill="#8E1B2A"><path d="M4 7h13v6a6 6 0 0 1-6 6h-1a6 6 0 0 1-6-6z"/><path d="M17 9h1.5a2.5 2.5 0 0 1 0 5H17" fill="none" stroke="#8E1B2A" stroke-width="2"/></svg></span>
+  </div>
+  <h1>Veredicto</h1>
+</div>
 
 
 <!-- ============ PANTALLA DE INGRESO ============ -->
@@ -275,6 +369,10 @@ header.top h1{font-size:34px;line-height:1}
     </div>
     <button class="ico" data-a="ajustes" aria-label="Ajustes del grupo"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 7h16M4 12h16M4 17h16"/></svg></button>
   </header>
+  <div class="busqueda">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/></svg>
+    <input type="search" id="buscar" placeholder="Buscar en todos los veredictos" aria-label="Buscar veredictos" autocomplete="off">
+  </div>
   <main id="main" class="wrap" style="width:100%"></main>
 </div>
 
@@ -313,7 +411,10 @@ const S = {
   items: [],         // [{ id, categoria_id, nombre, lugar, link, notas, fecha, pendiente }]
   puntajes: [],      // [{ item_id, user_id, puntaje, aspectos:{} }]
   catSel: null,      // categoría que estás mirando
-  vista: 'rank',     // 'rank' (ranking), 'pend' (pendientes) o 'desac' (desacuerdos)
+  vista: 'rank',
+  busca: '',
+  mapaTodas: true,   // el mapa muestra todas las categorías o solo la actual         // lo que escribiste en el buscador
+  orden: 'nota',     // cómo se ordena el ranking: 'nota', 'fecha' o 'polemico'     // 'rank' (ranking), 'pend' (pendientes) o 'desac' (desacuerdos)
   confirma: null,    // qué está pidiendo confirmación
   votos: {},        // cuántos votaron cada veredicto: { itemId: 3 }
   fotos: {},
@@ -368,7 +469,7 @@ const db = {
     const gid = S.grupoSel;
     const [c, i] = await Promise.all([
       sb.from('categorias').select('id,nombre,aspectos,creado').eq('espacio_id', gid).order('creado'),
-      sb.from('items').select('id,categoria_id,nombre,lugar,link,notas,fecha,pendiente,foto,creado').eq('espacio_id', gid)
+      sb.from('items').select('id,categoria_id,nombre,lugar,link,notas,fecha,pendiente,foto,lat,lng,creado').eq('espacio_id', gid)
     ]);
     if (c.error) throw c.error; if (i.error) throw i.error;
     const ids = i.data.map(x => x.id);
@@ -509,8 +610,12 @@ function notasDe(itemId){
   return { notas, prom, votos: hay.length, votosTotales: S.votos[itemId] ?? hay.length, rango, mia, oculto, coinc };
 }
 function ranking(catId){
-  return S.items.filter(x => x.categoria_id === catId && !x.pendiente).map(x => ({...x, ...notasDe(x.id)}))
-    .sort((a,b) => (b.prom ?? -1) - (a.prom ?? -1) || (b.fecha||'').localeCompare(a.fecha||'') || a.nombre.localeCompare(b.nombre,'es'));
+  const porNota = (a,b) => (b.prom ?? -1) - (a.prom ?? -1) || (b.fecha||'').localeCompare(a.fecha||'') || a.nombre.localeCompare(b.nombre,'es');
+  const lista = S.items.filter(x => x.categoria_id === catId && !x.pendiente).map(x => ({...x, ...notasDe(x.id)})).sort(porNota);
+  lista.forEach((x, i) => x.puesto = x.prom != null ? i + 1 : null);   // el puesto siempre es por nota, aunque se ordene distinto
+  if (S.orden === 'fecha') lista.sort((a,b) => (b.fecha||'').localeCompare(a.fecha||'') || porNota(a,b));
+  if (S.orden === 'polemico') lista.sort((a,b) => (b.oculto ? -1 : b.rango) - (a.oculto ? -1 : a.rango) || porNota(a,b));
+  return lista;
 }
 const pendientes = catId => S.items.filter(x => x.categoria_id === catId && x.pendiente).sort((a,b) => (b.creado||'').localeCompare(a.creado||''));
 // Ítems puntuados por al menos dos personas (para comparar)
@@ -564,7 +669,9 @@ function render(){
   if (!S.listo) return;
   $('#nombreGrupo').textContent = grupo().nombre;
   const m = $('#main');
-  if (S.vista === 'desac'){ m.innerHTML = vistaDesacuerdos(); $('#pie').hidden = true; return; }
+  if (S.vista === 'desac'){ $('.busqueda').hidden = true; m.innerHTML = vistaDesacuerdos(); $('#pie').hidden = true; return; }
+  $('.busqueda').hidden = !S.items.length;
+  if (S.busca.trim()){ m.innerHTML = vistaBusqueda(); $('#pie').hidden = true; return; }
   let html = '';
   // Si estás solo en el grupo, el aviso para invitar
   if (!otros().length) html += `<div class="invitar"><p>Pasale este código a quienes quieras sumar a <b>${esc(grupo().nombre)}</b>:</p>
@@ -595,7 +702,9 @@ function render(){
   const cat = catActual();
   const lista = ranking(cat.id), pend = pendientes(cat.id);
   $('#btnPie').textContent = S.vista === 'pend' ? 'Agregar pendiente' : 'Dictar veredicto';
-  html += `<div class="rank-cab"><h2>${esc(cat.nombre)}</h2><button class="link" data-a="editarCat" style="font-size:14px">Editar</button></div>`;
+  html += `<div class="rank-cab"><h2>${esc(cat.nombre)}</h2><span class="rank-acc">${S.vista === 'rank' && lista.length > 1 ? `<select class="orden" id="orden" aria-label="Ordenar">
+      <option value="nota"${S.orden==='nota'?' selected':''}>Mejor nota</option><option value="fecha"${S.orden==='fecha'?' selected':''}>Más reciente</option><option value="polemico"${S.orden==='polemico'?' selected':''}>Más polémico</option></select>` : ''}
+      <button class="link" data-a="editarCat" style="font-size:14px">Editar</button></span></div>`;
   if (S.confirma === 'menuCat') html += `<div class="confirma"><span>¿Qué querés cambiar de "${esc(cat.nombre)}"?</span>
       <button class="btn chico" data-a="aspectos">Aspectos</button><button class="btn chico" data-a="pedirRenombrar">Nombre</button><button class="btn chico dan" data-a="pedirBorrarCat">Borrar</button><button class="btn chico" data-a="no">Cancelar</button></div>`;
   if (S.confirma === 'renombrar') html += `<form class="confirma" data-f="renombrar"><input type="text" id="inRenombrar" value="${esc(cat.nombre)}" maxlength="40" aria-label="Nuevo nombre" style="flex:1;min-width:150px">
@@ -604,8 +713,14 @@ function render(){
     html += `<div class="confirma"><span>${t ? `Se van a borrar también ${t === 1 ? 'el veredicto' : `los ${t} veredictos y pendientes`} de esta categoría, para todo el grupo.` : '¿Borrar esta categoría?'}</span>
       <button class="btn chico" data-a="no">Cancelar</button><button class="btn chico dan" data-a="borrarCat">Sí, borrar</button></div>`; }
   html += `<div class="vistas" role="tablist"><button role="tab" aria-selected="${S.vista==='rank'}" class="${S.vista==='rank'?'on':''}" data-a="vista" data-v="rank">Ranking (${lista.length})</button>
-      <button role="tab" aria-selected="${S.vista==='pend'}" class="${S.vista==='pend'?'on':''}" data-a="vista" data-v="pend">Pendientes (${pend.length})</button></div>`;
-  if (S.vista === 'pend'){
+      <button role="tab" aria-selected="${S.vista==='pend'}" class="${S.vista==='pend'?'on':''}" data-a="vista" data-v="pend">Pendientes (${pend.length})</button>
+      <button role="tab" aria-selected="${S.vista==='mapa'}" class="${S.vista==='mapa'?'on':''}" data-a="vista" data-v="mapa">Mapa</button></div>`;
+  if (S.vista === 'mapa'){
+    html += `<div class="mapa-leyenda"><span>${conUbicacion().length} ${conUbicacion().length === 1 ? 'lugar' : 'lugares'} en el mapa</span>
+      <label><input type="checkbox" id="mapaTodas"${S.mapaTodas ? ' checked' : ''}> Todas las categorías</label></div>
+      <div id="mapa" class="mapa" role="region" aria-label="Mapa de lugares"></div>
+      ${conUbicacion().length ? '' : `<section class="card"><p class="vacio">Todavía no hay lugares con ubicación${S.mapaTodas ? '' : ` en ${esc(cat.nombre)}`}.<br>Al cargar o editar un veredicto, buscá el lugar en <b>Ubicación</b>.</p></section>`}`;
+  } else if (S.vista === 'pend'){
     if (!pend.length) html += `<section class="card"><p class="vacio">No hay pendientes en ${esc(cat.nombre)}.<br>Anoten acá lo que quieren probar.</p></section>`;
     else html += `<div class="lista">${pend.map(x => `<div class="item"><span class="pend" aria-hidden="true"></span>
         <button class="link" data-a="abrir" data-id="${x.id}" style="text-align:left;color:inherit;min-width:0;font-weight:400"><span class="nom" style="display:block">${esc(x.nombre)}</span><span class="sub" style="display:block">${esc(x.lugar || x.notas || 'Pendiente')}</span></button>
@@ -613,12 +728,105 @@ function render(){
   } else {
     if (!lista.length) html += `<section class="card"><p class="vacio">Todavía no hay veredictos en ${esc(cat.nombre)}.<br>Tocá <b>Dictar veredicto</b> para cargar el primero.</p></section>`;
     else html += `<div class="lista">${lista.map((x,i) => { const s = subFila(x);
-        return `<button class="item${i===0 && x.prom!=null ? ' top1' : ''}" data-a="abrir" data-id="${x.id}">
-          <span class="pos num">${x.prom != null ? i+1 : '–'}</span>
+        return `<button class="item${x.puesto===1 ? ' top1' : ''}" data-a="abrir" data-id="${x.id}">
+          <span class="pos num">${x.puesto ?? '–'}</span>
           <span class="fila-nom">${miniatura(x)}<span style="min-width:0"><span class="nom" style="display:block">${esc(x.nombre)}</span><span class="sub${s.choque?' choque':''}${s.oculto?' oculto':''}" style="display:block">${esc(s.t) || '&nbsp;'}</span></span></span>
           ${notasFila(x)}</button>`; }).join('')}</div>`;
   }
+  quitarMapa();
   m.innerHTML = html;
+  if (S.vista === 'mapa') dibujarMapa();
+}
+
+/* ---------- MAPA ---------- */
+let mapa = null, mapaChico = null;
+// Fondo del mapa: estilo claro u oscuro según la apariencia (mapas de CARTO, sobre OpenStreetMap)
+function capaMapa(){
+  const oscuro = document.documentElement.dataset.theme === 'dark' || (!document.documentElement.dataset.theme && matchMedia('(prefers-color-scheme: dark)').matches);
+  return L.tileLayer(`https://{s}.basemaps.cartocdn.com/${oscuro ? 'dark_all' : 'rastertiles/voyager'}/{z}/{x}/{y}{r}.png`, {
+    maxZoom: 19, subdomains: 'abcd',
+    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/attributions">CARTO</a>' });
+}
+const conUbicacion = () => S.items.filter(x => x.lat != null && x.lng != null && (S.mapaTodas || x.categoria_id === S.catSel));
+function iconoPin(x){
+  const n = x.pendiente ? null : notasDe(x.id);
+  const txt = x.pendiente ? '·' : n.oculto ? '?' : n.prom != null ? nota(Math.round(n.prom)) : '–';
+  const clase = x.pendiente ? 'pendiente' : (n.prom != null && n.prom < 5 && !n.oculto ? 'baja' : '');
+  return L.divIcon({ className:'', html:`<div class="pin ${clase}"><b class="num">${txt}</b></div>`, iconSize:[34,34], iconAnchor:[17,34], popupAnchor:[0,-30] });
+}
+const comoLlegar = x => `https://www.google.com/maps/dir/?api=1&destination=${x.lat},${x.lng}`;
+function dibujarMapa(){
+  if (!window.L){ $('#mapa').innerHTML = '<p class="vacio" style="padding:20px">No se pudo cargar el mapa. Revisá tu conexión.</p>'; return; }
+  mapa = L.map('mapa', { zoomControl: true });
+  capaMapa().addTo(mapa);
+  const lugares = conUbicacion(), marcas = [];
+  lugares.forEach(x => {
+    const n = x.pendiente ? null : notasDe(x.id);
+    const cat = S.cats.find(c => c.id === x.categoria_id)?.nombre || '';
+    const detalle = x.pendiente ? 'Pendiente' : n.oculto ? 'Votá para ver las notas' : n.prom != null ? `Promedio ${nota(Math.round(n.prom*10)/10)} · ${n.votos} ${n.votos===1?'nota':'notas'}` : 'Sin notas todavía';
+    const mk = L.marker([x.lat, x.lng], { icon: iconoPin(x), title: x.nombre }).addTo(mapa)
+      .bindPopup(`<div class="pop"><b>${esc(x.nombre)}</b><br><small>${esc(cat)}${x.lugar ? ' · ' + esc(x.lugar) : ''}</small><br>${esc(detalle)}
+        <div class="acc"><button class="btn chico" data-a="abrir" data-id="${x.id}">Ver</button><a class="btn chico" href="${comoLlegar(x)}" target="_blank" rel="noopener" style="display:inline-flex;align-items:center;text-decoration:none">Cómo llegar</a></div></div>`);
+    marcas.push(mk);
+  });
+  if (marcas.length) mapa.fitBounds(L.featureGroup(marcas).getBounds().pad(0.25), { maxZoom: 15 });
+  else mapa.setView([-34.6037, -58.3816], 12);   // Buenos Aires, si todavía no hay lugares
+}
+function quitarMapa(){ if (mapa){ mapa.remove(); mapa = null; } }
+
+// Buscar una dirección o un lugar (Nominatim, el buscador libre de OpenStreetMap)
+async function buscarLugar(q){
+  const url = 'https://nominatim.openstreetmap.org/search?format=jsonv2&limit=5&accept-language=es&q=' + encodeURIComponent(q);
+  const r = await fetch(url, { headers: { 'Accept': 'application/json' } });
+  if (!r.ok) throw new Error('busqueda');
+  return (await r.json()).map(d => ({ lat: Number(d.lat), lng: Number(d.lon), nombre: d.name || d.display_name.split(',')[0], direccion: d.display_name }));
+}
+// La zona de "Ubicación" dentro de la ventana de un veredicto
+function dibujarUbicacion(){
+  const z = $('#zonaUbic'); if (!z) return;
+  if (mapaChico){ mapaChico.remove(); mapaChico = null; }
+  if (H.lat == null){
+    z.innerHTML = `<div class="ubic-fila"><input type="text" id="fUbic" maxlength="120" placeholder="Ej: Café Tilo, Palermo" value="${esc(H.ubicTexto || '')}" aria-label="Buscar el lugar en el mapa"><button type="button" class="btn" data-a="buscarUbic">Buscar</button></div>
+      <div id="resUbic"></div>`;
+    return;
+  }
+  z.innerHTML = `<div id="mapaChico" class="mapa-chico"></div>
+    <span style="font-size:13px;color:var(--muted)">Si el pin no quedó justo, tocá el mapa donde va.</span>
+    <div class="foto-botones"><a class="btn chico" href="${comoLlegar(H)}" target="_blank" rel="noopener" style="display:inline-flex;align-items:center;text-decoration:none">Cómo llegar</a><button type="button" class="btn chico" data-a="cambiarUbic">Buscar otro</button><button type="button" class="btn chico dan" data-a="quitarUbic">Quitar ubicación</button></div>`;
+  if (!window.L) return;
+  mapaChico = L.map('mapaChico', { zoomControl:false, attributionControl:true }).setView([H.lat, H.lng], 16);
+  capaMapa().addTo(mapaChico);
+  const mk = L.marker([H.lat, H.lng], { icon: L.divIcon({ className:'', html:'<div class="pin yo"><b>★</b></div>', iconSize:[34,34], iconAnchor:[17,34] }) }).addTo(mapaChico);
+  mapaChico.on('click', e => { H.lat = e.latlng.lat; H.lng = e.latlng.lng; mk.setLatLng(e.latlng); });
+  setTimeout(() => mapaChico && mapaChico.invalidateSize(), 250);   // la ventana termina de abrirse
+}
+async function ejecutarBusquedaUbic(){
+  const q = $('#fUbic').value.trim(); if (!q) return;
+  H.ubicTexto = q;
+  const res = $('#resUbic');
+  res.innerHTML = '<p class="vacio" style="font-size:14px">Buscando…</p>';
+  try {
+    const lista = await buscarLugar(q);
+    if (!lista.length){ res.innerHTML = '<p class="vacio" style="font-size:14px">No encontramos ese lugar. Probá agregando el barrio o la ciudad.</p>'; return; }
+    H.resultados = lista;
+    res.innerHTML = `<div class="resultados">${lista.map((r, i) => `<button type="button" data-a="elegirUbic" data-i="${i}"><b>${esc(r.nombre)}</b><small>${esc(r.direccion)}</small></button>`).join('')}</div>`;
+  } catch(e){ res.innerHTML = '<p class="vacio" style="font-size:14px">No se pudo buscar. Revisá tu conexión y probá de nuevo.</p>'; }
+}
+
+// Buscador: encuentra veredictos y pendientes de todas las categorías
+function vistaBusqueda(){
+  const q = sinTildes(S.busca.trim());
+  const res = S.items.filter(x => [x.nombre, x.lugar, x.notas, S.cats.find(c => c.id === x.categoria_id)?.nombre].some(t => sinTildes(t).includes(q)))
+    .map(x => ({...x, ...notasDe(x.id)}))
+    .sort((a,b) => (a.pendiente - b.pendiente) || (b.prom ?? -1) - (a.prom ?? -1));
+  if (!res.length) return `<section class="card"><p class="vacio">No encontramos nada con "${esc(S.busca.trim())}".</p></section>`;
+  return `<p class="eyebrow">${res.length} ${res.length === 1 ? 'resultado' : 'resultados'}</p><div class="lista">${res.map(x => { const cat = S.cats.find(c => c.id === x.categoria_id)?.nombre || '';
+    if (x.pendiente) return `<button class="item" data-a="abrir" data-id="${x.id}"><span class="pend" aria-hidden="true"></span>
+      <span style="min-width:0"><span class="nom" style="display:block">${esc(x.nombre)}</span><span class="sub" style="display:block"><span class="etq">Pendiente</span>${esc(cat)}</span></span><span></span></button>`;
+    const s = subFila(x);
+    return `<button class="item" data-a="abrir" data-id="${x.id}"><span class="pos num" style="font-size:16px">${x.prom != null ? nota(Math.round(x.prom*10)/10) : '–'}</span>
+      <span class="fila-nom">${miniatura(x)}<span style="min-width:0"><span class="nom" style="display:block">${esc(x.nombre)}</span><span class="sub${s.choque?' choque':''}${s.oculto?' oculto':''}" style="display:block"><span class="etq">${esc(cat)}</span>${esc(s.t)}</span></span></span>
+      ${notasFila(x)}</button>`; }).join('')}</div>`;
 }
 
 // La pantalla de desacuerdos (en pareja) o del jurado (en grupo)
@@ -649,7 +857,16 @@ function vistaDesacuerdos(){
 }
 
 // Muestra una de las tres pantallas: ingreso, bienvenida o la app
+// La bienvenida se va después de la animación (alrededor de un segundo y medio)
+const inicioSplash = Date.now();
+function sacarSplash(){
+  const el = $('#splash'); if (!el || el.classList.contains('fuera')) return;
+  const espera = matchMedia('(prefers-reduced-motion: reduce)').matches ? 500 : 1600;
+  setTimeout(() => { el.classList.add('fuera'); setTimeout(() => el.remove(), 500); }, Math.max(0, espera - (Date.now() - inicioSplash)));
+}
+setTimeout(sacarSplash, 4000);   // por si la conexión tarda: que nunca quede trabada
 function mostrar(cual){
+  sacarSplash();
   $('#login').hidden = cual !== 'login';
   $('#bienvenida').hidden = cual !== 'bienvenida';
   $('#app').hidden = cual !== 'app';
@@ -670,6 +887,7 @@ function abrirHoja(itemId, opciones = {}){
   const mia = n ? n.notas[0] : null;
   H.aspectos = cat.aspectos;
   H.archivo = null; H.quitarFoto = false; H.fotoActual = x?.foto || null;
+  H.lat = x?.lat ?? null; H.lng = x?.lng ?? null; H.ubicTexto = x ? [x.nombre, x.lugar].filter(Boolean).join(', ') : ''; H.resultados = [];
   H.pendiente = opciones.yaFuimos ? false : (x ? x.pendiente : S.vista === 'pend');
   H.nota = Math.round(mia?.puntaje ?? 8);
   H.asp = {}; H.aspectos.forEach(a => H.asp[a] = Math.round(mia?.aspectos?.[a] ?? mia?.puntaje ?? 8));
@@ -688,6 +906,7 @@ function abrirHoja(itemId, opciones = {}){
     </div>
     <div class="campo"><label>Foto <span style="font-weight:400">(opcional)</span></label><div id="zonaFoto"></div>
       <input type="file" id="fFoto" accept="image/*" hidden></div>
+    <div class="campo"><label>Ubicación <span style="font-weight:400">(opcional, para el mapa)</span></label><div id="zonaUbic" style="display:flex;flex-direction:column;gap:8px"></div></div>
     <div class="dos">
       <div class="campo"><label for="fLugar">Lugar o barrio <span style="font-weight:400">(opcional)</span></label><input type="text" id="fLugar" maxlength="80" value="${esc(x?.lugar)}" placeholder="Ej: Palermo"></div>
       <div class="campo" id="zonaFecha"${H.pendiente ? ' hidden' : ''}><label for="fFecha">Fecha</label><input type="date" id="fFecha" value="${x && x.fecha ? x.fecha : (!x || opciones.yaFuimos ? hoy() : '')}" max="${hoy()}"></div>
@@ -707,6 +926,7 @@ function abrirHoja(itemId, opciones = {}){
   $('#fNombre').oninput = () => $('#eNombre').hidden = true;
   conectarRango();
   dibujarFoto();
+  dibujarUbicacion();
   $('#fFoto').onchange = e => { const f = e.target.files[0]; if (f){ H.archivo = f; H.quitarFoto = false; dibujarFoto(); } };
   if (!x) setTimeout(() => $('#fNombre').focus(), 60);
 }
@@ -736,6 +956,32 @@ async function achicar(archivo){
   c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
   return await new Promise(res => c.toBlob(res, 'image/jpeg', 0.82));
 }
+// ANIMACIÓN: al dictar tu veredicto, un sello con tu nota "golpea" la pantalla
+function sellar(n){
+  const el = document.createElement('div');
+  el.className = 'escena'; el.setAttribute('aria-hidden', 'true');
+  el.innerHTML = `<div class="sello-golpe"><b class="num">${nota(n)}</b><small>Veredicto</small></div>`;
+  document.body.appendChild(el);
+  setTimeout(() => el.classList.add('fuera'), 1100);
+  setTimeout(() => el.remove(), 1450);
+}
+// ANIMACIÓN: si los demás ya habían votado, sus tarjetas se dan vuelta una por una, como un jurado
+function revelar(nombre, n){
+  const conNota = n.notas.filter(o => o.puntaje != null);
+  const paso = 0.45;   // segundos entre una tarjeta y la siguiente
+  const el = document.createElement('div');
+  el.className = 'escena';
+  el.innerHTML = `<div class="revela" role="dialog" aria-modal="true" aria-label="Veredicto del jurado">
+    <p class="eyebrow">El jurado da su veredicto</p><h3>${esc(nombre)}</h3>
+    <div class="mesa">${conNota.map((o, i) => `<div class="juez"><span class="giro"><span class="cara" style="--d:${0.3 + i * paso}s">
+        <span class="lado dorso">${CANDADO}</span><span class="lado frente num${o.puntaje < 5 ? ' baja' : ''}">${nota(o.puntaje)}</span></span></span>
+        <span>${o.user_id === S.yo ? 'Vos' : esc(o.nombre)}</span></div>`).join('')}</div>
+    <div class="final" style="--d:${0.5 + conNota.length * paso}s"><b class="num">${nota(Math.round(n.prom * 10) / 10)}</b><span>promedio${n.coinc != null ? ` · ${fraseCoinc(n.coinc)}` : ''}</span></div>
+    <button class="btn pri" data-a="cerrarEscena" style="width:100%">Ver el ranking</button></div>`;
+  document.body.appendChild(el);
+  el.addEventListener('click', e => { if (e.target === el || e.target.closest('[data-a="cerrarEscena"]')){ el.classList.add('fuera'); setTimeout(() => el.remove(), 300); } });
+}
+
 // El veredicto del grupo para un ítem: promedio, coincidencia y la nota de cada uno
 function bloqueGrupo(n){
   if (n.oculto) return `<div class="sellado">${CANDADO}<span>${n.votosTotales ? `${n.votosTotales} ${n.votosTotales === 1 ? 'persona ya votó' : 'personas ya votaron'}` : 'Todavía nadie votó'}. Poné tu nota para ver las de los demás.</span></div>`;
@@ -776,7 +1022,7 @@ function controlesNota(){
 }
 function notaGeneral(){ const vs = H.aspectos.map(a => H.asp[a]); return Math.round(vs.reduce((s,v)=>s+v,0) / vs.length); }
 function conectarRango(){ const r = $('#fNota'); if (r) r.oninput = () => { H.nota = Number(r.value); $('#notaEst').innerHTML = estrellas(H.nota); }; }
-function cerrarHoja(){ $('#velo').hidden = true; $('#velo').innerHTML = ''; }
+function cerrarHoja(){ if (mapaChico){ mapaChico.remove(); mapaChico = null; } $('#velo').hidden = true; $('#velo').innerHTML = ''; }
 
 async function guardarItem(form){
   const nombre = $('#fNombre').value.trim();
@@ -787,7 +1033,7 @@ async function guardarItem(form){
   const previo = S.items.find(i => i.id === id);
   const fila = { id, categoria_id: previo ? previo.categoria_id : S.catSel, nombre, pendiente: H.pendiente,
     lugar: $('#fLugar').value.trim() || null, link: link || null, notas: $('#fNotas').value.trim() || null,
-    fecha: H.pendiente ? null : ($('#fFecha').value || null) };
+    fecha: H.pendiente ? null : ($('#fFecha').value || null), lat: H.lat, lng: H.lng };
   let miNota;   // undefined = no tocar la nota (pendientes)
   if (!H.pendiente){
     if ($('#fSinNota').checked) miNota = null;
@@ -795,6 +1041,10 @@ async function guardarItem(form){
     else miNota = { puntaje: H.nota, aspectos: {} };
   }
   const archivo = H.archivo, quitar = H.quitarFoto, fotoVieja = previo?.foto || null;
+  // ¿Es la primera vez que votás algo que otros ya votaron? Entonces, después de guardar, se revelan sus notas
+  const antes = previo && !previo.pendiente ? notasDe(id) : null;
+  const votoNuevo = miNota && (!antes || antes.mia == null);
+  const tocaRevelar = votoNuevo && antes && antes.oculto && antes.votosTotales > 0;
   fila.foto = fotoVieja;
   cerrarHoja();
   const eraPend = previo?.pendiente;
@@ -806,6 +1056,11 @@ async function guardarItem(form){
   },
     H.pendiente ? (previo ? 'Pendiente guardado' : 'Agregado a pendientes') : (previo && !eraPend ? 'Veredicto actualizado' : 'Veredicto dictado'));
   if (ok && eraPend && !H.pendiente){ S.vista = 'rank'; render(); }
+  if (ok && votoNuevo){
+    const despues = notasDe(id);
+    if (tocaRevelar && despues.notas.filter(o => o.puntaje != null).length >= 2) revelar(nombre, despues);
+    else sellar(miNota.puntaje);
+  }
 }
 
 // Editar los aspectos de una categoría
@@ -952,6 +1207,11 @@ document.addEventListener('click', async e => {
   else if (a === 'abrir') abrirHoja(id);
   else if (a === 'yaFuimos') abrirHoja(id, {yaFuimos:true});
   else if (a === 'cerrar') cerrarHoja();
+  else if (a === 'buscarUbic') ejecutarBusquedaUbic();
+  else if (a === 'elegirUbic'){ const r = H.resultados[Number(b.dataset.i)]; H.lat = r.lat; H.lng = r.lng;
+    if (!$('#fLugar').value.trim()){ const partes = r.direccion.split(',').map(t => t.trim()); $('#fLugar').value = partes[2] || partes[1] || ''; }
+    dibujarUbicacion(); }
+  else if (a === 'cambiarUbic' || a === 'quitarUbic'){ H.lat = null; H.lng = null; dibujarUbicacion(); if (a === 'cambiarUbic') setTimeout(() => $('#fUbic')?.focus(), 50); }
   else if (a === 'elegirFoto') $('#fFoto').click();
   else if (a === 'elegirAvatar') $('#fAvatar').click();
   else if (a === 'quitarAvatar'){ cerrarHoja(); await seguro(() => db.cambiarAvatar(null), 'Foto de perfil quitada'); }
@@ -963,7 +1223,7 @@ document.addEventListener('click', async e => {
   else if (a === 'borrarItem'){ const id2 = $('.hoja').dataset.id; cerrarHoja(); await seguro(() => db.borrarItem(id2), 'Borrado'); }
   // Grupos
   else if (a === 'grupos') abrirGrupos();
-  else if (a === 'elegirGrupo'){ cerrarHoja(); if (id !== S.grupoSel){ S.grupoSel = id; S.catSel = null; S.vista = 'rank'; S.confirma = null; recordarGrupo(id); await seguro(() => db.cargar()); } }
+  else if (a === 'elegirGrupo'){ cerrarHoja(); if (id !== S.grupoSel){ S.grupoSel = id; S.catSel = null; S.vista = 'rank'; S.confirma = null; S.busca = ''; $('#buscar').value = ''; recordarGrupo(id); await seguro(() => db.cargar()); } }
   else if (a === 'formCrear' || a === 'formUnirse'){ $('#gBotones').hidden = true; formGrupo($('#gForm'), a === 'formCrear' ? 'crear' : 'unirse', false); setTimeout(() => { const n = $('#gMiNombre'); if (!n) return; (n.value ? ($('#gNombre') || $('#gCodigo')) : n).focus(); }, 60); }
   else if (a === 'modoGrupo'){ const nom = $('#gMiNombre').value; formGrupo($('#bForm'), b.dataset.modo, true); $('#gMiNombre').value = nom; }
   // Ajustes
@@ -1020,6 +1280,13 @@ document.addEventListener('submit', async e => {
     finally { const btn = $('#gListo'); if (btn) btn.disabled = false; }
   }
 });
+$('#buscar').addEventListener('input', e => { S.busca = e.target.value; S.confirma = null; render(); });
+document.addEventListener('change', e => {
+  if (e.target.id === 'orden'){ S.orden = e.target.value; render(); }
+  if (e.target.id === 'mapaTodas'){ S.mapaTodas = e.target.checked; render(); }
+});
+// Enter en el campo de ubicación busca, en lugar de guardar el veredicto
+document.addEventListener('keydown', e => { if (e.key === 'Enter' && e.target.id === 'fUbic'){ e.preventDefault(); ejecutarBusquedaUbic(); } });
 // Al volver a la app (por ejemplo, después de que alguien del grupo cargó algo), se actualiza sola
 document.addEventListener('visibilitychange', () => { if (!document.hidden && S.listo && $('#velo').hidden) db.cargar().catch(console.error); });
 
@@ -1072,6 +1339,7 @@ document.addEventListener('click', e => {
   temaGuardado = b.dataset.tema;
   try { localStorage.setItem('veredicto-tema', temaGuardado); } catch(e){}
   aplicarTema(temaGuardado);
+  if (S.listo && S.vista === 'mapa') render();   // el mapa cambia a claro u oscuro
 });
 
 /* Al abrir: si hay sesión, cargar los datos; si no, mostrar el ingreso */
