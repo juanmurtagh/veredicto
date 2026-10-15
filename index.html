@@ -811,7 +811,33 @@ async function buscarLugar(q, todoElMundo){
   if (todoElMundo) return lista;
   return lista.filter(x => enZona(x, z)).sort((a, b) => distancia(a, z) - distancia(b, z));   // solo la zona, lo más cercano primero
 }
-// ESQUINAS: "Libertad y Quintana" → busca dónde se cruzan esas dos calles (con Overpass, de OpenStreetMap)
+// DIRECCIONES DE ARGENTINA: Georef, el servicio gratuito del Estado que entiende "calle altura" y "calle esquina calle"
+// Primero limpiamos lo que se copia de Google Maps: código postal, "Cdad. Autónoma de Buenos Aires", "Argentina"...
+function limpiarDireccion(q){
+  return q.split(',')[0]
+    .replace(/\b[A-Z]\d{4}[A-Z]{0,3}\b/gi, '')
+    .replace(/\b(cdad\.?|ciudad)\s+aut[oó]noma\s+de\s+buenos\s+aires\b|\bcaba\b|\bcapital\s+federal\b|\bargentina\b/gi, '')
+    .replace(/\s+/g, ' ').trim();
+}
+async function buscarDireccion(q){
+  let dir = limpiarDireccion(q);
+  const esq = separarEsquina(dir);
+  if (esq) dir = `${esq[0]} esquina ${esq[1]}`;
+  if (!/\d/.test(dir) && !esq) return [];   // sin altura ni esquina no es una dirección
+  const r = await fetch('https://apis.datos.gob.ar/georef/api/v2.0/direcciones?max=10&direccion=' + encodeURIComponent(dir));
+  if (!r.ok) throw new Error('georef');
+  const z = zonaBusqueda();
+  const todas = ((await r.json()).direcciones || []).filter(d => d.ubicacion && d.ubicacion.lat != null).map(d => {
+    const loc = d.localidad_censal?.nombre, prov = d.provincia?.nombre, dep = d.departamento?.nombre;
+    return { lat: d.ubicacion.lat, lng: d.ubicacion.lon, nombre: d.nomenclatura?.split(',')[0] || dir,
+      direccion: [loc, prov].filter((t, i, a) => t && a.indexOf(t) === i).join(', '),
+      barrio: dep && !/^comuna/i.test(dep) ? dep : (loc && loc !== prov ? loc : '') };
+  }).sort((a, b) => distancia(a, z) - distancia(b, z));
+  const cerca = todas.filter(x => enZona(x, z));
+  return cerca.length ? cerca : todas;   // si en tu zona no hay, mostramos las de otras partes del país
+}
+
+// ESQUINAS: "Libertad y Quintana\" → busca dónde se cruzan esas dos calles (con Overpass, de OpenStreetMap)
 function separarEsquina(q){
   const m = q.match(/^(.+?)\s+(?:y|e|esquina|esq\.?|&|\/)\s+(.+)$/i);
   return m ? [m[1].trim(), m[2].trim()] : null;
@@ -879,10 +905,12 @@ async function ejecutarBusquedaUbic(){
   H.mundo = $('#fMundo').checked;
   try {
     // Si escribiste una esquina ("Libertad y Quintana"), primero buscamos el cruce de las dos calles
-    const esq = separarEsquina(q);
+    // 1) Direcciones y esquinas de Argentina (Georef)  2) esquinas con OpenStreetMap  3) nombres de lugares (Photon)
+    const limpia = limpiarDireccion(q), esq = separarEsquina(limpia);
     let lista = [];
-    if (esq){ try { lista = await buscarEsquina(esq[0], esq[1], H.mundo); } catch(e){ console.error(e); } }
-    if (!lista.length) lista = await buscarLugar(q, H.mundo);
+    if (!H.mundo){ try { lista = await buscarDireccion(q); } catch(e){ console.error(e); } }
+    if (!lista.length && esq){ try { lista = await buscarEsquina(esq[0], esq[1], H.mundo); } catch(e){ console.error(e); } }
+    if (!lista.length) lista = await buscarLugar(H.mundo ? q : limpia, H.mundo);
     if (!lista.length){ res.innerHTML = `<p class="vacio" style="font-size:14px">No encontramos ese lugar${H.mundo ? '' : ' cerca'}. Probá con la dirección y el número${H.mundo ? '' : ', marcá "Buscar en todo el mundo"'} o marcalo a mano en el mapa.</p>`; return; }
     H.resultados = lista;
     res.innerHTML = `<div class="resultados">${lista.map((r, i) => `<button type="button" data-a="elegirUbic" data-i="${i}"><b>${esc(r.nombre)}</b><small>${esc(r.direccion)}</small></button>`).join('')}</div>`;
