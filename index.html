@@ -791,17 +791,54 @@ function dibujarMapa(){
 function quitarMapa(){ if (mapa){ mapa.remove(); mapa = null; } }
 
 // Buscar un lugar por nombre o dirección (Photon: libre, tolera errores de tipeo y prioriza lo cercano)
-async function buscarLugar(q){
-  const c = centroGrupo();
-  const url = `https://photon.komoot.io/api/?limit=6&lat=${c.lat}&lon=${c.lng}&q=` + encodeURIComponent(q);
+// La zona donde se busca: alrededor de los lugares del grupo (o de Buenos Aires), unos 70 km a la redonda
+function zonaBusqueda(){ const c = centroGrupo(), d = 0.65, r = v => Math.round(v * 1e4) / 1e4;
+  return { lat: r(c.lat), lng: r(c.lng), oeste: r(c.lng - d), sur: r(c.lat - d), este: r(c.lng + d), norte: r(c.lat + d) }; }
+const enZona = (p, z) => p.lat >= z.sur && p.lat <= z.norte && p.lng >= z.oeste && p.lng <= z.este;
+const distancia = (a, b) => Math.hypot(a.lat - b.lat, (a.lng - b.lng) * Math.cos(a.lat * Math.PI / 180));
+async function buscarLugar(q, todoElMundo){
+  const z = zonaBusqueda();
+  let url = `https://photon.komoot.io/api/?limit=8&lat=${z.lat}&lon=${z.lng}&q=` + encodeURIComponent(q);
+  if (!todoElMundo) url += `&bbox=${z.oeste},${z.sur},${z.este},${z.norte}`;   // solo resultados dentro de la zona
   const r = await fetch(url);
   if (!r.ok) throw new Error('busqueda');
-  return (await r.json()).features.map(f => {
+  const lista = (await r.json()).features.map(f => {
     const p = f.properties || {};
     const calle = p.street ? p.street + (p.housenumber ? ' ' + p.housenumber : '') : '';
     const partes = [calle, p.district || p.locality, p.city, p.state, p.country].filter((t, i, a) => t && a.indexOf(t) === i);
     return { lat: f.geometry.coordinates[1], lng: f.geometry.coordinates[0], nombre: p.name || calle || partes[0] || 'Lugar', direccion: partes.join(', '), barrio: p.district || p.locality || p.city || '' };
   });
+  if (todoElMundo) return lista;
+  return lista.filter(x => enZona(x, z)).sort((a, b) => distancia(a, z) - distancia(b, z));   // solo la zona, lo más cercano primero
+}
+// ESQUINAS: "Libertad y Quintana" → busca dónde se cruzan esas dos calles (con Overpass, de OpenStreetMap)
+function separarEsquina(q){
+  const m = q.match(/^(.+?)\s+(?:y|e|esquina|esq\.?|&|\/)\s+(.+)$/i);
+  return m ? [m[1].trim(), m[2].trim()] : null;
+}
+// Arma un patrón que encuentra la calle con o sin tildes y con o sin "Av.", sin confundir "Libertad" con "Libertador"
+function patronCalle(nombre){
+  const limpio = nombre.replace(/^(av\.?|avda\.?|avenida|calle|pje\.?|pasaje)\s+/i, '').trim();
+  const grupos = { a:'[aáàä]', e:'[eéèë]', i:'[iíìï]', o:'[oóòö]', u:'[uúùü]', n:'[nñ]' };
+  const cuerpo = sinTildes(limpio).replace(/[.*+?^${}()|[\]\\"]/g, '').split('').map(ch => grupos[ch] || ch).join('');
+  return `(^| )${cuerpo}($| |,)`;
+}
+async function buscarEsquina(c1, c2, todoElMundo){
+  const z = zonaBusqueda();   // las esquinas se buscan siempre en la zona (en todo el mundo serían demasiadas)
+  const caja = `(${z.sur},${z.oeste},${z.norte},${z.este})`;
+  const consulta = `[out:json][timeout:20];
+    way["highway"]["name"~"${patronCalle(c1)}",i]${caja}->.a; node(w.a)->.na;
+    way["highway"]["name"~"${patronCalle(c2)}",i]${caja}->.b; node(w.b)->.nb;
+    node.na.nb; out 20;`;
+  const r = await fetch('https://overpass-api.de/api/interpreter', { method:'POST', body:'data=' + encodeURIComponent(consulta),
+    headers:{ 'Content-Type':'application/x-www-form-urlencoded' } });
+  if (!r.ok) throw new Error('esquina');
+  const nodos = (await r.json()).elements || [];
+  // Puede haber varias esquinas con esos nombres (en distintas localidades): las agrupamos y ordenamos por cercanía
+  const res = [];
+  nodos.forEach(n => { if (!res.some(x => distancia(x, {lat:n.lat, lng:n.lon}) < 0.004)) res.push({ lat:n.lat, lng:n.lon }); });
+  return res.sort((a, b) => distancia(a, z) - distancia(b, z)).slice(0, 5)
+    .map((p, i) => ({ ...p, nombre: `Esquina de ${c1} y ${c2}`, direccion: i === 0 ? 'La más cercana a tus lugares' : `Otra esquina con esos nombres (a ${Math.round(distancia(p, z) * 111)} km)`, barrio: '' }));
 }
 // Si pegás un link de Google Maps (o unas coordenadas), sacamos la ubicación de ahí
 function coordenadasDe(t){
@@ -814,7 +851,8 @@ function dibujarUbicacion(){
   const z = $('#zonaUbic'); if (!z) return;
   if (mapaChico){ mapaChico.remove(); mapaChico = null; }
   if (H.lat == null){
-    z.innerHTML = `<div class="ubic-fila"><input type="text" id="fUbic" maxlength="400" placeholder="Nombre, dirección o link de Google Maps" value="${esc(H.ubicTexto || '')}" aria-label="Buscar el lugar en el mapa"><button type="button" class="btn" data-a="buscarUbic">Buscar</button></div>
+    z.innerHTML = `<div class="ubic-fila"><input type="text" id="fUbic" maxlength="400" placeholder="Nombre, dirección, esquina o link de Google Maps" value="${esc(H.ubicTexto || '')}" aria-label="Buscar el lugar en el mapa"><button type="button" class="btn" data-a="buscarUbic">Buscar</button></div>
+      <label class="sinnota" style="font-size:13px"><input type="checkbox" id="fMundo"${H.mundo ? ' checked' : ''}> Buscar en todo el mundo (por ejemplo, si están de viaje)</label>
       <div id="resUbic"></div>
       <button type="button" class="link" data-a="marcarMano" style="align-self:flex-start;font-size:14px">o marcalo a mano en el mapa</button>`;
     return;
@@ -838,9 +876,14 @@ async function ejecutarBusquedaUbic(){
   if (c){ H.lat = c.lat; H.lng = c.lng; H.aMano = false; dibujarUbicacion(); return; }
   if (/maps\.app\.goo\.gl|goo\.gl\/maps/i.test(q)){ res.innerHTML = '<p class="vacio" style="font-size:14px">Los links cortos de Google Maps no traen la ubicación. Buscalo por nombre, o marcalo a mano en el mapa.</p>'; return; }
   res.innerHTML = '<p class="vacio" style="font-size:14px">Buscando…</p>';
+  H.mundo = $('#fMundo').checked;
   try {
-    const lista = await buscarLugar(q);
-    if (!lista.length){ res.innerHTML = '<p class="vacio" style="font-size:14px">No encontramos ese lugar. Probá con otro nombre, la dirección, o marcalo a mano en el mapa.</p>'; return; }
+    // Si escribiste una esquina ("Libertad y Quintana"), primero buscamos el cruce de las dos calles
+    const esq = separarEsquina(q);
+    let lista = [];
+    if (esq){ try { lista = await buscarEsquina(esq[0], esq[1], H.mundo); } catch(e){ console.error(e); } }
+    if (!lista.length) lista = await buscarLugar(q, H.mundo);
+    if (!lista.length){ res.innerHTML = `<p class="vacio" style="font-size:14px">No encontramos ese lugar${H.mundo ? '' : ' cerca'}. Probá con la dirección y el número${H.mundo ? '' : ', marcá "Buscar en todo el mundo"'} o marcalo a mano en el mapa.</p>`; return; }
     H.resultados = lista;
     res.innerHTML = `<div class="resultados">${lista.map((r, i) => `<button type="button" data-a="elegirUbic" data-i="${i}"><b>${esc(r.nombre)}</b><small>${esc(r.direccion)}</small></button>`).join('')}</div>`;
   } catch(e){ res.innerHTML = '<p class="vacio" style="font-size:14px">No se pudo buscar. Revisá tu conexión y probá de nuevo.</p>'; }
@@ -920,7 +963,7 @@ function abrirHoja(itemId, opciones = {}){
   const mia = n ? n.notas[0] : null;
   H.aspectos = cat.aspectos;
   H.archivo = null; H.quitarFoto = false; H.fotoActual = x?.foto || null;
-  H.lat = x?.lat ?? null; H.lng = x?.lng ?? null; H.aMano = false; H.ubicTexto = x ? [x.nombre, x.lugar].filter(Boolean).join(', ') : ''; H.resultados = [];
+  H.lat = x?.lat ?? null; H.lng = x?.lng ?? null; H.aMano = false; H.mundo = false; H.ubicTexto = x ? [x.nombre, x.lugar].filter(Boolean).join(', ') : ''; H.resultados = [];
   H.pendiente = opciones.yaFuimos ? false : (x ? x.pendiente : S.vista === 'pend');
   H.nota = Math.round(mia?.puntaje ?? 8);
   H.asp = {}; H.aspectos.forEach(a => H.asp[a] = Math.round(mia?.aspectos?.[a] ?? mia?.puntaje ?? 8));
