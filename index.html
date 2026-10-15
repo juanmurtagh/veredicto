@@ -819,20 +819,65 @@ function limpiarDireccion(q){
     .replace(/\b(cdad\.?|ciudad)\s+aut[oó]noma\s+de\s+buenos\s+aires\b|\bcaba\b|\bcapital\s+federal\b|\bargentina\b/gi, '')
     .replace(/\s+/g, ' ').trim();
 }
-async function buscarDireccion(q){
-  let dir = limpiarDireccion(q);
-  const esq = separarEsquina(dir);
-  if (esq) dir = `${esq[0]} esquina ${esq[1]}`;
-  if (!/\d/.test(dir) && !esq) return [];   // sin altura ni esquina no es una dirección
-  const r = await fetch('https://apis.datos.gob.ar/georef/api/v2.0/direcciones?max=10&direccion=' + encodeURIComponent(dir));
-  if (!r.ok) throw new Error('georef');
-  const z = zonaBusqueda();
-  const todas = ((await r.json()).direcciones || []).filter(d => d.ubicacion && d.ubicacion.lat != null).map(d => {
+// Espera una respuesta como máximo unos segundos (si un servicio anda lento, seguimos con los otros)
+async function traerJSON(url, segundos = 8){
+  const ctl = new AbortController(), t = setTimeout(() => ctl.abort(), segundos * 1000);
+  try { const r = await fetch(url, { signal: ctl.signal }); if (!r.ok) throw new Error('http ' + r.status); return await r.json(); }
+  finally { clearTimeout(t); }
+}
+// Plan B si el navegador no deja leer la respuesta directamente: pedirla "como script" (JSONP)
+function traerJSONP(url, segundos = 8){
+  return new Promise((ok, mal) => {
+    const nombre = 'usig_' + Math.random().toString(36).slice(2), sc = document.createElement('script');
+    const fin = () => { delete window[nombre]; sc.remove(); clearTimeout(t); };
+    const t = setTimeout(() => { fin(); mal(new Error('jsonp')); }, segundos * 1000);
+    window[nombre] = datos => { fin(); ok(datos); };
+    sc.onerror = () => { fin(); mal(new Error('jsonp')); };
+    sc.src = url + '&callback=' + nombre;
+    document.head.appendChild(sc);
+  });
+}
+const lindo = t => String(t || '').toLowerCase().replace(/(^|[\s(.\-])([a-záéíóúñü])/g, (m, a, b) => a + b.toUpperCase()).replace(/ (Y|De|Del|La|Las|Los|E) /g, m => m.toLowerCase());
+// ¿La zona de búsqueda está en Buenos Aires y alrededores? (ahí funciona el servicio de la Ciudad)
+const enAMBA = z => z.lat > -35.4 && z.lat < -34.0 && z.lng > -59.4 && z.lng < -57.7;
+
+// CIUDAD DE BUENOS AIRES y alrededores: el servicio oficial de la Ciudad (USIG), que conoce cada altura de cada calle
+async function buscarUSIG(dir){
+  const url = 'https://servicios.usig.buenosaires.gob.ar/normalizar/?geocodificar=TRUE&srid=4326&maxOptions=10&direccion=' + encodeURIComponent(dir);
+  let datos;
+  try { datos = await traerJSON(url); } catch(e){ datos = await traerJSONP(url); }
+  return (datos?.direccionesNormalizadas || []).map(d => {
+    const c = d.coordenadas || {}, lat = parseFloat(c.y ?? c.lat), lng = parseFloat(c.x ?? c.lng);
+    if (!isFinite(lat) || !isFinite(lng) || Math.abs(lat) > 90 || Math.abs(lng) > 180) return null;
+    const esCaba = String(d.cod_partido || '').toLowerCase() === 'caba' || /^caba$/i.test(d.nombre_partido || '');
+    const zona = esCaba ? 'Ciudad de Buenos Aires' : [lindo(d.nombre_localidad), lindo(d.nombre_partido)].filter((t, i, a) => t && a.indexOf(t) === i).join(', ');
+    return { lat, lng, nombre: lindo(String(d.direccion || dir).split(',')[0]), direccion: zona, barrio: esCaba ? '' : lindo(d.nombre_partido) };
+  }).filter(Boolean);
+}
+// RESTO DE ARGENTINA: Georef, el servicio gratuito del Estado nacional
+async function buscarGeoref(dir){
+  const datos = await traerJSON('https://apis.datos.gob.ar/georef/api/v2.0/direcciones?max=10&direccion=' + encodeURIComponent(dir));
+  return (datos.direcciones || []).filter(d => d.ubicacion && d.ubicacion.lat != null).map(d => {
     const loc = d.localidad_censal?.nombre, prov = d.provincia?.nombre, dep = d.departamento?.nombre;
     return { lat: d.ubicacion.lat, lng: d.ubicacion.lon, nombre: d.nomenclatura?.split(',')[0] || dir,
       direccion: [loc, prov].filter((t, i, a) => t && a.indexOf(t) === i).join(', '),
       barrio: dep && !/^comuna/i.test(dep) ? dep : (loc && loc !== prov ? loc : '') };
-  }).sort((a, b) => distancia(a, z) - distancia(b, z));
+  });
+}
+async function buscarDireccion(q){
+  const limpia = limpiarDireccion(q), esq = separarEsquina(limpia);
+  if (!/\d/.test(limpia) && !esq) return [];   // sin altura ni esquina no es una dirección
+  const z = zonaBusqueda();
+  // Preguntamos a los dos servicios a la vez y juntamos lo que respondan
+  const pedidos = [buscarGeoref(esq ? `${esq[0]} esquina ${esq[1]}` : limpia)];
+  if (enAMBA(z)) pedidos.unshift(buscarUSIG(esq ? `${esq[0]} y ${esq[1]}` : limpia));
+  const respuestas = await Promise.allSettled(pedidos);
+  const todas = [];
+  respuestas.forEach(r => { if (r.status === 'fulfilled') r.value.forEach(p => {
+    if (!todas.some(x => distancia(x, p) < 0.0015)) todas.push(p);   // la misma dirección repetida (≈150 m) aparece una sola vez
+  }); else console.error(r.reason); });
+  if (!todas.length && respuestas.every(r => r.status === 'rejected')) throw new Error('direcciones');
+  todas.sort((a, b) => distancia(a, z) - distancia(b, z));
   const cerca = todas.filter(x => enZona(x, z));
   return cerca.length ? cerca : todas;   // si en tu zona no hay, mostramos las de otras partes del país
 }
