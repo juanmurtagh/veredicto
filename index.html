@@ -221,6 +221,11 @@ header.top h1{font-size:34px;line-height:1}
 .nota{gap:12px}
 .nota .paso{width:40px;height:40px;font-size:22px}
 .asp-otros{font-size:12px;color:var(--muted)}
+.sacar-asp{width:28px;height:28px;border-radius:50%;border:0;background:none;color:var(--muted);font-size:20px;line-height:1;margin-left:2px}
+.sacar-asp:hover{background:var(--line);color:var(--ink,inherit)}
+.asp-voto{display:flex;flex-direction:column;gap:8px;margin-top:8px}
+.asp-fuera{display:flex;flex-wrap:wrap;align-items:center;gap:6px;font-size:13px;color:var(--muted)}
+.cat.chica{height:30px;padding:0 12px;font-size:13px}
 .editor-asp{display:flex;gap:8px;align-items:center}
 .editor-asp input{flex:1;min-width:0}
 .quitar{width:36px;height:36px;border-radius:10px;border:1px solid var(--line);background:var(--bg);font-size:18px;line-height:1;color:var(--muted);flex:none}
@@ -754,8 +759,22 @@ let mapa = null, mapaChico = null;
 function esOscuro(){ return document.documentElement.dataset.theme === 'dark' || (!document.documentElement.dataset.theme && matchMedia('(prefers-color-scheme: dark)').matches); }
 function capaMapa(contenedor){
   contenedor.classList.toggle('mapa-oscuro', esOscuro());
-  return L.maplibreGL({ style: 'https://tiles.openfreemap.org/styles/liberty',
+  // "Positron": un mapa simple y claro, para que se destaquen tus lugares
+  const capa = L.maplibreGL({ style: 'https://tiles.openfreemap.org/styles/positron',
     attribution: '<a href="https://openfreemap.org" target="_blank" rel="noopener">OpenFreeMap</a> &copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a>' });
+  capa.on('add', () => { const gl = capa.getMaplibreMap && capa.getMaplibreMap(); if (gl) gl.on('styledata', () => simplificarMapa(gl)); });
+  return capa;
+}
+// Escondemos lo que no aporta: paradas de colectivo, negocios, edificios en 3D, números de casa, íconos y carteles de rutas.
+// Quedan las calles con sus nombres, los barrios, las plazas y el agua.
+const SOBRA_FUENTE = ['poi', 'building', 'housenumber', 'aeroway', 'aerodrome_label', 'mountain_peak'];
+const SOBRA_NOMBRE = /poi|housenumber|shield|transit|bus[-_ ]?stop/i;
+function simplificarMapa(gl){
+  let capas; try { capas = gl.getStyle()?.layers || []; } catch(e){ return; }
+  capas.forEach(l => {
+    const sobra = SOBRA_FUENTE.includes(l['source-layer']) || SOBRA_NOMBRE.test(l.id) || l.type === 'fill-extrusion' || (l.type === 'symbol' && l.layout && l.layout['icon-image']);
+    if (sobra && gl.getLayoutProperty(l.id, 'visibility') !== 'none') gl.setLayoutProperty(l.id, 'visibility', 'none');
+  });
 }
 // Dónde centrar la búsqueda y el mapa: el promedio de los lugares del grupo, o Buenos Aires
 function centroGrupo(){
@@ -1034,12 +1053,16 @@ function abrirHoja(itemId, opciones = {}){
   const cat = S.cats.find(c => c.id === (x ? x.categoria_id : S.catSel));
   const n = x ? notasDe(x.id) : null;
   const mia = n ? n.notas[0] : null;
-  H.aspectos = cat.aspectos;
+  // Los aspectos de ESTE voto: arrancan como los de la categoría, pero podés sacar los que no aplican o sumar otros
+  H.aspCat = cat.aspectos;
+  const yaPuestos = Object.keys(mia?.aspectos || {});
+  H.aspectos = yaPuestos.length ? [...cat.aspectos.filter(a => yaPuestos.includes(a)), ...yaPuestos.filter(a => !cat.aspectos.includes(a))] : [...cat.aspectos];
+  H.agregandoAsp = false;
   H.archivo = null; H.quitarFoto = false; H.fotoActual = x?.foto || null;
   H.lat = x?.lat ?? null; H.lng = x?.lng ?? null; H.aMano = false; H.mundo = false; H.ubicTexto = x ? [x.nombre, x.lugar].filter(Boolean).join(', ') : ''; H.resultados = [];
   H.pendiente = opciones.yaFuimos ? false : (x ? x.pendiente : S.vista === 'pend');
   H.nota = Math.round(mia?.puntaje ?? 8);
-  H.asp = {}; H.aspectos.forEach(a => H.asp[a] = Math.round(mia?.aspectos?.[a] ?? mia?.puntaje ?? 8));
+  H.asp = {}; [...new Set([...H.aspCat, ...H.aspectos])].forEach(a => H.asp[a] = Math.round(mia?.aspectos?.[a] ?? mia?.puntaje ?? 8));
   const sinNota = false;   // si abrís algo que todavía no puntuaste, es para votar: las estrellas aparecen listas
   const otrasNotas = n ? n.notas.slice(1) : [];
   $('#velo').innerHTML = `<form class="hoja" data-f="item" data-id="${x ? x.id : ''}" role="dialog" aria-modal="true" aria-labelledby="hTit" novalidate>
@@ -1131,11 +1154,13 @@ function revelar(nombre, n){
   el.addEventListener('click', e => { if (e.target === el || e.target.closest('[data-a="cerrarEscena"]')){ el.classList.add('fuera'); setTimeout(() => el.remove(), 300); } });
 }
 
+// Primero los aspectos de la categoría (en su orden), después los que alguien sumó en su voto
+const ordenAsp = ks => [...(H.aspCat || []).filter(a => ks.includes(a)), ...ks.filter(a => !(H.aspCat || []).includes(a))];
 // El veredicto del grupo para un ítem: promedio, coincidencia y la nota de cada uno
 function bloqueGrupo(n){
   if (n.oculto) return `<div class="sellado">${CANDADO}<span>${n.votosTotales ? `${n.votosTotales} ${n.votosTotales === 1 ? 'persona ya votó' : 'personas ya votaron'}` : 'Todavía nadie votó'}. Poné tu nota para ver las de los demás.</span></div>`;
   const filas = n.notas.map((o, i) => `<div class="otro">${avatar(o, 32)}${tarjeta(o.puntaje, o.nombre)}<span style="min-width:0"><b>${i === 0 ? 'Vos' : esc(o.nombre)}</b>${o.puntaje == null ? ' <span class="asp-otros">todavía no votó</span>' : ''}
-      ${o.puntaje != null && H.aspectos.length && Object.keys(o.aspectos || {}).length ? `<br><span class="asp-otros">${H.aspectos.filter(a => o.aspectos[a] != null).map(a => `${esc(a)} ${nota(o.aspectos[a])}`).join(' · ')}</span>` : ''}</span></div>`).join('');
+      ${o.puntaje != null && Object.keys(o.aspectos || {}).length ? `<br><span class="asp-otros">${ordenAsp(Object.keys(o.aspectos)).map(a => `${esc(a)} ${nota(o.aspectos[a])}`).join(' · ')}</span>` : ''}</span></div>`).join('');
   return `<div class="grupo-veredicto"><p class="eyebrow">Veredicto del grupo</p>
     <div class="gv-cab"><div><span class="gv-nota num">${n.prom == null ? '–' : nota(Math.round(n.prom * 10) / 10)}</span><span class="gv-de">promedio de ${n.votos} ${n.votos === 1 ? 'nota' : 'notas'}</span></div>
       ${n.coinc != null ? `<div class="gv-coinc"><b class="num">${n.coinc}%</b><span>${fraseCoinc(n.coinc)}</span></div>` : ''}</div>
@@ -1157,6 +1182,9 @@ function estrellas(n, chicas){
 }
 // Sin aspectos: estrellas con − y +, y la barra. Con aspectos: estrellas por aspecto, y la general es el promedio.
 function controlesNota(){
+  return controlesEstrellas() + editorAspVoto();
+}
+function controlesEstrellas(){
   if (!H.aspectos.length) return `<div class="nota">
       <button type="button" class="paso" data-paso="-1" aria-label="Bajar un punto">−</button>
       <span id="notaEst">${estrellas(H.nota)}</span>
@@ -1167,7 +1195,33 @@ function controlesNota(){
     ${H.aspectos.map((a, i) => `<div class="asp"><span>${esc(a)}</span><span class="ctrl">
       <button type="button" class="paso chico" data-paso="-1" data-asp="${i}" aria-label="Bajar ${esc(a)}">−</button>
       <span id="asp${i}">${estrellas(H.asp[a], true)}</span>
-      <button type="button" class="paso chico" data-paso="1" data-asp="${i}" aria-label="Subir ${esc(a)}">+</button></span></div>`).join('')}`;
+      <button type="button" class="paso chico" data-paso="1" data-asp="${i}" aria-label="Subir ${esc(a)}">+</button>
+      <button type="button" class="sacar-asp" data-a="sacarAspVoto" data-i="${i}" aria-label="No contar ${esc(a)} en este voto" title="No aplica">×</button></span></div>`).join('')}`;
+}
+// Debajo de las estrellas: volver a sumar los aspectos que sacaste, o agregar uno nuevo solo para este voto
+function editorAspVoto(){
+  const fuera = H.aspCat.filter(a => !H.aspectos.includes(a));
+  return `<div class="asp-voto">
+    ${fuera.length ? `<div class="asp-fuera"><span>No cuentan en este voto:</span>${fuera.map(a => `<button type="button" class="cat chica" data-a="volverAspVoto" data-n="${esc(a)}">+ ${esc(a)}</button>`).join('')}</div>` : ''}
+    ${H.agregandoAsp ? `<div class="editor-asp"><input type="text" id="nuevoAspVoto" maxlength="24" placeholder="Ej: Postre"><button type="button" class="btn chico" data-a="sumarAspVoto">Agregar</button></div>`
+      : `<button type="button" class="link" data-a="abrirAspVoto" style="align-self:flex-start;font-size:14px">+ Agregar un aspecto solo para este voto</button>`}
+  </div>`;
+}
+function redibujarNota(){
+  const c = $('#notaControles'); if (!c) return;
+  c.innerHTML = controlesNota(); conectarRango();
+  if (H.agregandoAsp) $('#nuevoAspVoto')?.focus();
+}
+function sumarAspVoto(){
+  const i = $('#nuevoAspVoto'), nombre = (i?.value || '').trim().replace(/\s+/g, ' ');
+  if (!nombre){ H.agregandoAsp = false; redibujarNota(); return; }
+  const igual = [...H.aspCat, ...H.aspectos].find(a => sinTildes(a) === sinTildes(nombre));
+  const n = igual || nombre;
+  if (!H.aspectos.includes(n)){
+    if (H.asp[n] == null) H.asp[n] = H.aspectos.length ? notaGeneral() : H.nota;
+    H.aspectos.push(n);
+  }
+  H.agregandoAsp = false; redibujarNota();
 }
 function notaGeneral(){ const vs = H.aspectos.map(a => H.asp[a]); return Math.round(vs.reduce((s,v)=>s+v,0) / vs.length); }
 function conectarRango(){ const r = $('#fNota'); if (r) r.oninput = () => { H.nota = Number(r.value); $('#notaEst').innerHTML = estrellas(H.nota); }; }
@@ -1186,7 +1240,7 @@ async function guardarItem(form){
   let miNota;   // undefined = no tocar la nota (pendientes)
   if (!H.pendiente){
     if ($('#fSinNota').checked) miNota = null;
-    else if (H.aspectos.length) miNota = { puntaje: notaGeneral(), aspectos: {...H.asp} };
+    else if (H.aspectos.length) miNota = { puntaje: notaGeneral(), aspectos: Object.fromEntries(H.aspectos.map(a => [a, H.asp[a]])) };
     else miNota = { puntaje: H.nota, aspectos: {} };
   }
   const archivo = H.archivo, quitar = H.quitarFoto, fotoVieja = previo?.foto || null;
@@ -1347,6 +1401,10 @@ document.addEventListener('click', async e => {
   else if (a === 'editarCat'){ S.confirma = S.confirma === 'menuCat' ? null : 'menuCat'; render(); }
   else if (a === 'aspectos') abrirAspectos();
   else if (a === 'agregarAsp'){ sumarAspecto($('#nuevoAsp').value); $('#nuevoAsp').value = ''; $('#nuevoAsp').focus(); }
+  else if (a === 'sacarAspVoto'){ const q = H.aspectos[Number(b.dataset.i)]; if (H.aspectos.length === 1) H.nota = H.asp[q]; H.aspectos = H.aspectos.filter(x => x !== q); redibujarNota(); }
+  else if (a === 'volverAspVoto'){ const n = b.dataset.n; if (!H.aspectos.includes(n)){ if (!H.aspectos.length) H.asp[n] = H.nota; H.aspectos.push(n); H.aspectos = ordenAsp(H.aspectos); } redibujarNota(); }
+  else if (a === 'abrirAspVoto'){ H.agregandoAsp = true; redibujarNota(); }
+  else if (a === 'sumarAspVoto') sumarAspVoto();
   else if (a === 'quitarAsp'){ aspEdit.splice(Number(b.dataset.i), 1); dibujarAspectos(); }
   else if (a === 'pedirRenombrar'){ S.confirma = 'renombrar'; render(); const i=$('#inRenombrar'); i.focus(); i.select(); }
   else if (a === 'pedirBorrarCat'){ S.confirma = 'cat'; render(); }
@@ -1436,6 +1494,7 @@ document.addEventListener('change', e => {
   if (e.target.id === 'mapaTodas'){ S.mapaTodas = e.target.checked; render(); }
 });
 // Enter en el campo de ubicación busca, en lugar de guardar el veredicto
+document.addEventListener('keydown', e => { if (e.key === 'Enter' && e.target.id === 'nuevoAspVoto'){ e.preventDefault(); sumarAspVoto(); } });
 document.addEventListener('keydown', e => { if (e.key === 'Enter' && e.target.id === 'fUbic'){ e.preventDefault(); ejecutarBusquedaUbic(); } });
 // Al volver a la app (por ejemplo, después de que alguien del grupo cargó algo), se actualiza sola
 document.addEventListener('visibilitychange', () => { if (!document.hidden && S.listo && $('#velo').hidden) db.cargar().catch(console.error); });
