@@ -225,6 +225,11 @@ header.top h1{font-size:34px;line-height:1}
 .gv-coinc b{font-family:var(--display);font-weight:400;font-size:24px;line-height:1.1}
 .gv-coinc span{font-size:13px;color:var(--muted)}
 
+/* ============ FOTOS DE PERFIL ============ */
+.avatar{border-radius:50%;object-fit:cover;flex:none;display:inline-grid;place-items:center;background:var(--soft);color:var(--accent);font-family:var(--display);border:1.5px solid var(--line)}
+.mi-foto{display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+.jurado .avatar{margin-bottom:6px}
+
 /* ============ FOTOS ============ */
 .mini{width:44px;height:44px;border-radius:10px;object-fit:cover;flex:none;background:var(--soft)}
 .fila-nom{display:flex;align-items:center;gap:10px;min-width:0}
@@ -308,7 +313,8 @@ const S = {
   vista: 'rank',     // 'rank' (ranking), 'pend' (pendientes) o 'desac' (desacuerdos)
   confirma: null,    // qué está pidiendo confirmación
   votos: {},        // cuántos votaron cada veredicto: { itemId: 3 }
-  fotos: {},        // dirección temporal para ver cada foto: { 'grupo/foto.jpg': 'https://...' }
+  fotos: {},
+  avatares: {},      // dirección temporal de cada foto de perfil        // dirección temporal para ver cada foto: { 'grupo/foto.jpg': 'https://...' }
   listo: false
 };
 
@@ -346,7 +352,7 @@ const db = {
   // Carga mis grupos, y todo lo del grupo elegido
   async cargar(){
     const [m, g] = await Promise.all([
-      sb.from('miembros').select('espacio_id,user_id,nombre,unido'),
+      sb.from('miembros').select('espacio_id,user_id,nombre,unido,foto'),
       sb.from('espacios').select('id,nombre,codigo,creado_por,creado')
     ]);
     if (m.error) throw m.error; if (g.error) throw g.error;
@@ -374,6 +380,7 @@ const db = {
     S.votos = v.error ? {} : Object.fromEntries((v.data || []).map(r => [r.item_id, Number(r.votos)]));
     if (!S.cats.some(x => x.id === S.catSel)) { S.catSel = S.cats[0]?.id || null; }
     await this.cargarFotos();
+    await this.cargarAvatares();
     S.listo = true;
     mostrar('app');
   },
@@ -450,6 +457,28 @@ const db = {
     S.items = S.items.filter(x => x.id !== id); S.puntajes = S.puntajes.filter(p => p.item_id !== id); render();
     await this.borrarFoto(foto);
   },
+  async cargarAvatares(){
+    const faltan = [...new Set(S.todosMiembros.map(m => m.foto).filter(f => f && !S.avatares[f]))];
+    if (!faltan.length) return;
+    const { data, error } = await sb.storage.from('avatares').createSignedUrls(faltan, 60 * 60 * 24);
+    if (error){ console.error(error); return; }
+    data.forEach(d => { if (d.signedUrl) S.avatares[d.path] = d.signedUrl; });
+  },
+  // Mi foto de perfil: se sube a mi carpeta y se anota en todos mis grupos
+  async cambiarAvatar(blob){
+    const vieja = S.todosMiembros.find(m => m.user_id === S.yo)?.foto || null;
+    let ruta = null;
+    if (blob){
+      ruta = `${S.yo}/perfil-${Date.now()}.jpg`;
+      const up = await sb.storage.from('avatares').upload(ruta, blob, { contentType:'image/jpeg' });
+      if (up.error) throw up.error;
+      S.avatares[ruta] = URL.createObjectURL(blob);
+    }
+    const { error } = await sb.from('miembros').update({ foto: ruta }).eq('user_id', S.yo); if (error) throw error;
+    S.todosMiembros.concat(S.miembros).forEach(m => { if (m.user_id === S.yo) m.foto = ruta; });
+    if (vieja){ await sb.storage.from('avatares').remove([vieja]); delete S.avatares[vieja]; }
+    render();
+  },
   async cambiarMiNombre(nombre){
     const { error } = await sb.from('miembros').update({nombre}).eq('espacio_id', S.grupoSel).eq('user_id', S.yo); if (error) throw error;
     yo().nombre = nombre; render();
@@ -502,6 +531,12 @@ function jueces(){
    6. DIBUJAR LA PÁGINA
    ===================================================================== */
 const CANDADO = '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>';
+// La foto de perfil de alguien, o un círculo con su inicial si no tiene
+function avatar(m, tam = 36){
+  const url = m?.foto && S.avatares[m.foto];
+  const est = `width:${tam}px;height:${tam}px;font-size:${Math.round(tam * 0.42)}px`;
+  return url ? `<img class="avatar" src="${esc(url)}" alt="" style="${est}">` : `<span class="avatar" style="${est}" aria-hidden="true">${esc(inicial(m?.nombre))}</span>`;
+}
 function tarjetaOculta(quien){ return `<span class="tarjeta oculta" aria-label="${esc(quien)}: nota oculta hasta que votes">${CANDADO}<small>${esc(inicial(quien))}</small></span>`; }
 function tarjeta(n, quien){
   if (n == null) return `<span class="tarjeta falta" aria-label="${esc(quien)}: sin nota"><b>?</b><small>${esc(inicial(quien))}</small></span>`;
@@ -597,8 +632,8 @@ function vistaDesacuerdos(){
   const js = jueces().sort((a,b) => a.prom - b.prom);
   if (js.length >= 2){
     const ex = js[0], ge = js[js.length - 1];
-    html += `<div class="jurados"><div class="jurado"><span>El más exigente</span><b>${esc(ex.user_id === S.yo ? 'Vos' : ex.nombre)}</b><span>Pone ${nota(Math.round(ex.prom*10)/10)} en promedio</span></div>
-      <div class="jurado"><span>El más generoso</span><b>${esc(ge.user_id === S.yo ? 'Vos' : ge.nombre)}</b><span>Pone ${nota(Math.round(ge.prom*10)/10)} en promedio</span></div></div>`;
+    html += `<div class="jurados"><div class="jurado">${avatar(ex, 44)}<span>El más exigente</span><b>${esc(ex.user_id === S.yo ? 'Vos' : ex.nombre)}</b><span>Pone ${nota(Math.round(ex.prom*10)/10)} en promedio</span></div>
+      <div class="jurado">${avatar(ge, 44)}<span>El más generoso</span><b>${esc(ge.user_id === S.yo ? 'Vos' : ge.nombre)}</b><span>Pone ${nota(Math.round(ge.prom*10)/10)} en promedio</span></div></div>`;
   } else html += `<section class="card"><p class="vacio">Cuando cada uno haya puntuado al menos 3 veredictos, acá van a ver quién es el más exigente y quién el más generoso.</p></section>`;
   html += `<h2>${enPareja ? 'Donde no coinciden' : 'Los más polémicos'}</h2>`;
   if (!fuertes.length) html += `<section class="card"><p class="vacio">${enPareja ? 'Por ahora coinciden en todo.' : 'Por ahora no hubo grandes polémicas.'}</p></section>`;
@@ -682,6 +717,14 @@ function dibujarFoto(){
     : `<button type="button" class="foto-vacia" data-a="elegirFoto">${ICONO_FOTO} Agregar foto</button>`;
 }
 // Achica la foto antes de subirla: como mucho 1280 píxeles de lado, en JPEG
+// Foto de perfil: recorte cuadrado del centro, de 400 x 400 píxeles
+async function recortarCuadrada(archivo){
+  const img = await createImageBitmap(archivo, { imageOrientation:'from-image' });
+  const lado = Math.min(img.width, img.height), T = 400;
+  const c = document.createElement('canvas'); c.width = c.height = T;
+  c.getContext('2d').drawImage(img, (img.width - lado) / 2, (img.height - lado) / 2, lado, lado, 0, 0, T, T);
+  return await new Promise(res => c.toBlob(res, 'image/jpeg', 0.85));
+}
 async function achicar(archivo){
   const img = await createImageBitmap(archivo, { imageOrientation:'from-image' });
   const k = Math.min(1, 1280 / Math.max(img.width, img.height));
@@ -693,7 +736,7 @@ async function achicar(archivo){
 // El veredicto del grupo para un ítem: promedio, coincidencia y la nota de cada uno
 function bloqueGrupo(n){
   if (n.oculto) return `<div class="sellado">${CANDADO}<span>${n.votosTotales ? `${n.votosTotales} ${n.votosTotales === 1 ? 'persona ya votó' : 'personas ya votaron'}` : 'Todavía nadie votó'}. Poné tu nota para ver las de los demás.</span></div>`;
-  const filas = n.notas.map((o, i) => `<div class="otro">${tarjeta(o.puntaje, o.nombre)}<span style="min-width:0"><b>${i === 0 ? 'Vos' : esc(o.nombre)}</b>${o.puntaje == null ? ' <span class="asp-otros">todavía no votó</span>' : ''}
+  const filas = n.notas.map((o, i) => `<div class="otro">${avatar(o, 32)}${tarjeta(o.puntaje, o.nombre)}<span style="min-width:0"><b>${i === 0 ? 'Vos' : esc(o.nombre)}</b>${o.puntaje == null ? ' <span class="asp-otros">todavía no votó</span>' : ''}
       ${o.puntaje != null && H.aspectos.length && Object.keys(o.aspectos || {}).length ? `<br><span class="asp-otros">${H.aspectos.filter(a => o.aspectos[a] != null).map(a => `${esc(a)} ${nota(o.aspectos[a])}`).join(' · ')}</span>` : ''}</span></div>`).join('');
   return `<div class="grupo-veredicto"><p class="eyebrow">Veredicto del grupo</p>
     <div class="gv-cab"><div><span class="gv-nota num">${n.prom == null ? '–' : nota(Math.round(n.prom * 10) / 10)}</span><span class="gv-de">promedio de ${n.votos} ${n.votos === 1 ? 'nota' : 'notas'}</span></div>
@@ -820,6 +863,11 @@ function abrirAjustes(){
   const g = grupo();
   $('#velo').innerHTML = `<form class="hoja" data-f="ajustes" role="dialog" aria-modal="true" aria-labelledby="aTit" novalidate>
     <h3 id="aTit">Ajustes</h3>
+    <div class="campo"><label>Tu foto de perfil</label>
+      <div class="mi-foto"><span id="miAvatar">${avatar(yo(), 64)}</span>
+        <span class="foto-botones"><button type="button" class="btn chico" data-a="elegirAvatar">${yo().foto ? 'Cambiar foto' : 'Poner foto'}</button>${yo().foto ? '<button type="button" class="btn chico dan" data-a="quitarAvatar">Quitar</button>' : ''}</span></div>
+      <input type="file" id="fAvatar" accept="image/*" hidden>
+      <span style="font-size:13px;color:var(--muted)">Se ve en todos tus grupos.</span></div>
     <div class="campo"><label for="aGrupo">Nombre del grupo</label><input type="text" id="aGrupo" maxlength="40" value="${esc(g.nombre)}"></div>
     <div class="campo"><label for="aNombre">Tu nombre en este grupo</label><input type="text" id="aNombre" maxlength="30" value="${esc(yo().nombre)}"></div>
     <div class="campo"><label>Código para invitar</label>
@@ -827,7 +875,7 @@ function abrirAjustes(){
         <span style="display:flex;gap:6px"><button type="button" class="btn chico" data-a="copiar">Copiar</button>${soyCreador() ? '<button type="button" class="btn chico" data-a="pedirCodigo">Cambiar código</button>' : ''}</span></div>
       <div id="zonaCodigo"></div>
       <span style="font-size:13px;color:var(--muted)">Cualquiera con este código puede sumarse al grupo.</span></div>
-    <div class="campo"><label>Integrantes (${S.miembros.length})</label><div>${S.miembros.map(m => `<div class="miembro"><span>${esc(m.nombre)}${m.user_id===S.yo?'<span class="etiqueta">Vos</span>':''}${m.user_id===g.creado_por?'<span class="etiqueta">Creador</span>':''}</span>
+    <div class="campo"><label>Integrantes (${S.miembros.length})</label><div>${S.miembros.map(m => `<div class="miembro"><span style="display:flex;align-items:center;gap:10px">${avatar(m, 32)}<span>${esc(m.nombre)}${m.user_id===S.yo?'<span class="etiqueta">Vos</span>':''}${m.user_id===g.creado_por?'<span class="etiqueta">Creador</span>':''}</span></span>
         ${soyCreador() && m.user_id !== S.yo ? `<button type="button" class="btn chico dan" data-a="pedirSacar" data-id="${m.user_id}">Sacar</button>` : ''}</div>
         <div id="zonaSacar-${m.user_id}"></div>`).join('')}</div></div>
     <div class="campo"><label>Apariencia</label><div class="tema" style="align-self:flex-start" role="group" aria-label="Apariencia"><button type="button" data-tema="auto">Auto</button><button type="button" data-tema="claro">Claro</button><button type="button" data-tema="oscuro">Oscuro</button></div></div>
@@ -839,6 +887,12 @@ function abrirAjustes(){
     </div></form>`;
   $('#velo').hidden = false;
   aplicarTema(temaGuardado);
+  $('#fAvatar').onchange = async e => {
+    const f = e.target.files[0]; if (!f) return;
+    toast('Subiendo tu foto…');
+    const ok = await seguro(async () => db.cambiarAvatar(await recortarCuadrada(f)), 'Foto de perfil guardada');
+    if (ok && !$('#velo').hidden) abrirAjustes();   // vuelve a dibujar los ajustes con la foto nueva
+  };
 }
 
 function abrirNuevaCat(){
@@ -896,6 +950,8 @@ document.addEventListener('click', async e => {
   else if (a === 'yaFuimos') abrirHoja(id, {yaFuimos:true});
   else if (a === 'cerrar') cerrarHoja();
   else if (a === 'elegirFoto') $('#fFoto').click();
+  else if (a === 'elegirAvatar') $('#fAvatar').click();
+  else if (a === 'quitarAvatar'){ cerrarHoja(); await seguro(() => db.cambiarAvatar(null), 'Foto de perfil quitada'); }
   else if (a === 'quitarFoto'){ H.archivo = null; H.quitarFoto = true; $('#fFoto').value = ''; dibujarFoto(); }
   else if (a === 'pedirBorrarItem'){
     $('#zonaBorrar').innerHTML = `<div class="confirma"><span>¿Borrar esto y las notas de todo el grupo?</span>
