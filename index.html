@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,viewport-fit=cover">
 <title>Veredicto</title>
 <meta name="theme-color" content="#F6F1E7">
 <link rel="icon" type="image/png" href="favicon.png">
@@ -36,6 +36,9 @@
   --accent:#D4566A; --accent-ink:#1A0E10; --off:#3E3132; --off-ink:#C9B8A8; --danger:#F08A80;
   color-scheme:dark}
 
+/* Sin zoom: el celular no agranda la pantalla al tocar un campo ni con doble toque */
+html{touch-action:manipulation;-webkit-text-size-adjust:100%}
+input,select,textarea{font-size:16px!important}
 *{box-sizing:border-box}
 html{padding-top:env(safe-area-inset-top,0px)}
 body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--body);font-size:15px;line-height:1.5;
