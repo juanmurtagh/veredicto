@@ -11,6 +11,10 @@
 <!-- Leaflet: la librería del mapa (libre y gratis, sin registro) -->
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<!-- MapLibre + su conector con Leaflet: dibujan el mapa de OpenFreeMap (gratis, sin llave) -->
+<link rel="stylesheet" href="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css">
+<script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
+<script src="https://unpkg.com/@maplibre/maplibre-gl-leaflet@0.1.3/leaflet-maplibre-gl.js"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Gloock&family=Figtree:wght@400;500;600;700&display=swap">
@@ -307,7 +311,7 @@ a.btn{color:var(--ink)}
 .pop .acc{display:flex;gap:6px;margin-top:8px}
 .leaflet-container a.leaflet-popup-close-button{color:var(--muted)}
 .leaflet-control-attribution{font-size:10px}
-.mapa-oscuro{filter:invert(1) hue-rotate(180deg) brightness(.95) contrast(.9) saturate(.6)}
+.mapa-oscuro .leaflet-gl-layer{filter:invert(1) hue-rotate(180deg) brightness(.95) contrast(.9) saturate(.6)}
 .resultados{display:flex;flex-direction:column;border:1px solid var(--line);border-radius:12px;overflow:hidden}
 .resultados button{text-align:left;border:0;border-bottom:1px solid var(--line);background:var(--bg);padding:10px 12px;font-size:14px}
 .resultados button:last-child{border-bottom:0}
@@ -746,12 +750,18 @@ function render(){
 
 /* ---------- MAPA ---------- */
 let mapa = null, mapaChico = null;
-// Fondo del mapa: OpenStreetMap (libre y gratis, sin llave). En modo oscuro se oscurece con un filtro.
+// Fondo del mapa: OpenFreeMap (gratis y sin llave). En modo oscuro se oscurece con un filtro.
 function esOscuro(){ return document.documentElement.dataset.theme === 'dark' || (!document.documentElement.dataset.theme && matchMedia('(prefers-color-scheme: dark)').matches); }
-function capaMapa(){
-  return L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
-    maxZoom: 19, className: esOscuro() ? 'mapa-oscuro' : '',
-    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>' });
+function capaMapa(contenedor){
+  contenedor.classList.toggle('mapa-oscuro', esOscuro());
+  return L.maplibreGL({ style: 'https://tiles.openfreemap.org/styles/liberty',
+    attribution: '<a href="https://openfreemap.org" target="_blank" rel="noopener">OpenFreeMap</a> &copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a>' });
+}
+// Dónde centrar la búsqueda y el mapa: el promedio de los lugares del grupo, o Buenos Aires
+function centroGrupo(){
+  const ls = S.items.filter(x => x.lat != null);
+  if (!ls.length) return { lat: -34.6037, lng: -58.3816 };
+  return { lat: ls.reduce((s,x) => s + x.lat, 0) / ls.length, lng: ls.reduce((s,x) => s + x.lng, 0) / ls.length };
 }
 const conUbicacion = () => S.items.filter(x => x.lat != null && x.lng != null && (S.mapaTodas || x.categoria_id === S.catSel));
 function iconoPin(x){
@@ -762,9 +772,9 @@ function iconoPin(x){
 }
 const comoLlegar = x => `https://www.google.com/maps/dir/?api=1&destination=${x.lat},${x.lng}`;
 function dibujarMapa(){
-  if (!window.L){ $('#mapa').innerHTML = '<p class="vacio" style="padding:20px">No se pudo cargar el mapa. Revisá tu conexión.</p>'; return; }
+  if (!window.L || !L.maplibreGL){ $('#mapa').innerHTML = '<p class="vacio" style="padding:20px">No se pudo cargar el mapa. Revisá tu conexión.</p>'; return; }
   mapa = L.map('mapa', { zoomControl: true });
-  capaMapa().addTo(mapa);
+  capaMapa($('#mapa')).addTo(mapa);
   const lugares = conUbicacion(), marcas = [];
   lugares.forEach(x => {
     const n = x.pendiente ? null : notasDe(x.id);
@@ -776,32 +786,45 @@ function dibujarMapa(){
     marcas.push(mk);
   });
   if (marcas.length) mapa.fitBounds(L.featureGroup(marcas).getBounds().pad(0.25), { maxZoom: 15 });
-  else mapa.setView([-34.6037, -58.3816], 12);   // Buenos Aires, si todavía no hay lugares
+  else { const c = centroGrupo(); mapa.setView([c.lat, c.lng], 12); }   // si todavía no hay lugares
 }
 function quitarMapa(){ if (mapa){ mapa.remove(); mapa = null; } }
 
-// Buscar una dirección o un lugar (Nominatim, el buscador libre de OpenStreetMap)
+// Buscar un lugar por nombre o dirección (Photon: libre, tolera errores de tipeo y prioriza lo cercano)
 async function buscarLugar(q){
-  const url = 'https://nominatim.openstreetmap.org/search?format=jsonv2&limit=5&accept-language=es&q=' + encodeURIComponent(q);
-  const r = await fetch(url, { headers: { 'Accept': 'application/json' } });
+  const c = centroGrupo();
+  const url = `https://photon.komoot.io/api/?limit=6&lat=${c.lat}&lon=${c.lng}&q=` + encodeURIComponent(q);
+  const r = await fetch(url);
   if (!r.ok) throw new Error('busqueda');
-  return (await r.json()).map(d => ({ lat: Number(d.lat), lng: Number(d.lon), nombre: d.name || d.display_name.split(',')[0], direccion: d.display_name }));
+  return (await r.json()).features.map(f => {
+    const p = f.properties || {};
+    const calle = p.street ? p.street + (p.housenumber ? ' ' + p.housenumber : '') : '';
+    const partes = [calle, p.district || p.locality, p.city, p.state, p.country].filter((t, i, a) => t && a.indexOf(t) === i);
+    return { lat: f.geometry.coordinates[1], lng: f.geometry.coordinates[0], nombre: p.name || calle || partes[0] || 'Lugar', direccion: partes.join(', '), barrio: p.district || p.locality || p.city || '' };
+  });
+}
+// Si pegás un link de Google Maps (o unas coordenadas), sacamos la ubicación de ahí
+function coordenadasDe(t){
+  const pruebas = [/@(-?\d+\.\d+),(-?\d+\.\d+)/, /!3d(-?\d+\.\d+)!4d(-?\d+\.\d+)/, /[?&](?:q|query|ll|destination)=(-?\d+\.\d+),\s*(-?\d+\.\d+)/, /^\s*(-?\d+\.\d+)\s*,\s*(-?\d+\.\d+)\s*$/];
+  for (const re of pruebas){ const m = t.match(re); if (m){ const lat = Number(m[1]), lng = Number(m[2]); if (Math.abs(lat) <= 90 && Math.abs(lng) <= 180) return { lat, lng }; } }
+  return null;
 }
 // La zona de "Ubicación" dentro de la ventana de un veredicto
 function dibujarUbicacion(){
   const z = $('#zonaUbic'); if (!z) return;
   if (mapaChico){ mapaChico.remove(); mapaChico = null; }
   if (H.lat == null){
-    z.innerHTML = `<div class="ubic-fila"><input type="text" id="fUbic" maxlength="120" placeholder="Ej: Café Tilo, Palermo" value="${esc(H.ubicTexto || '')}" aria-label="Buscar el lugar en el mapa"><button type="button" class="btn" data-a="buscarUbic">Buscar</button></div>
-      <div id="resUbic"></div>`;
+    z.innerHTML = `<div class="ubic-fila"><input type="text" id="fUbic" maxlength="400" placeholder="Nombre, dirección o link de Google Maps" value="${esc(H.ubicTexto || '')}" aria-label="Buscar el lugar en el mapa"><button type="button" class="btn" data-a="buscarUbic">Buscar</button></div>
+      <div id="resUbic"></div>
+      <button type="button" class="link" data-a="marcarMano" style="align-self:flex-start;font-size:14px">o marcalo a mano en el mapa</button>`;
     return;
   }
   z.innerHTML = `<div id="mapaChico" class="mapa-chico"></div>
-    <span style="font-size:13px;color:var(--muted)">Si el pin no quedó justo, tocá el mapa donde va.</span>
+    <span style="font-size:13px;color:var(--muted)">${H.aMano ? 'Mové el mapa y tocá donde está el lugar.' : 'Si el pin no quedó justo, tocá el mapa donde va.'}</span>
     <div class="foto-botones"><a class="btn chico" href="${comoLlegar(H)}" target="_blank" rel="noopener" style="display:inline-flex;align-items:center;text-decoration:none">Cómo llegar</a><button type="button" class="btn chico" data-a="cambiarUbic">Buscar otro</button><button type="button" class="btn chico dan" data-a="quitarUbic">Quitar ubicación</button></div>`;
-  if (!window.L) return;
-  mapaChico = L.map('mapaChico', { zoomControl:false, attributionControl:true }).setView([H.lat, H.lng], 16);
-  capaMapa().addTo(mapaChico);
+  if (!window.L || !L.maplibreGL) return;
+  mapaChico = L.map('mapaChico', { zoomControl:true, attributionControl:true }).setView([H.lat, H.lng], H.aMano ? 13 : 16);
+  capaMapa($('#mapaChico')).addTo(mapaChico);
   const mk = L.marker([H.lat, H.lng], { icon: L.divIcon({ className:'', html:'<div class="pin yo"><b>★</b></div>', iconSize:[34,34], iconAnchor:[17,34] }) }).addTo(mapaChico);
   mapaChico.on('click', e => { H.lat = e.latlng.lat; H.lng = e.latlng.lng; mk.setLatLng(e.latlng); });
   setTimeout(() => mapaChico && mapaChico.invalidateSize(), 250);   // la ventana termina de abrirse
@@ -810,10 +833,14 @@ async function ejecutarBusquedaUbic(){
   const q = $('#fUbic').value.trim(); if (!q) return;
   H.ubicTexto = q;
   const res = $('#resUbic');
+  // ¿Pegaste un link de Google Maps o unas coordenadas?
+  const c = coordenadasDe(q);
+  if (c){ H.lat = c.lat; H.lng = c.lng; H.aMano = false; dibujarUbicacion(); return; }
+  if (/maps\.app\.goo\.gl|goo\.gl\/maps/i.test(q)){ res.innerHTML = '<p class="vacio" style="font-size:14px">Los links cortos de Google Maps no traen la ubicación. Buscalo por nombre, o marcalo a mano en el mapa.</p>'; return; }
   res.innerHTML = '<p class="vacio" style="font-size:14px">Buscando…</p>';
   try {
     const lista = await buscarLugar(q);
-    if (!lista.length){ res.innerHTML = '<p class="vacio" style="font-size:14px">No encontramos ese lugar. Probá agregando el barrio o la ciudad.</p>'; return; }
+    if (!lista.length){ res.innerHTML = '<p class="vacio" style="font-size:14px">No encontramos ese lugar. Probá con otro nombre, la dirección, o marcalo a mano en el mapa.</p>'; return; }
     H.resultados = lista;
     res.innerHTML = `<div class="resultados">${lista.map((r, i) => `<button type="button" data-a="elegirUbic" data-i="${i}"><b>${esc(r.nombre)}</b><small>${esc(r.direccion)}</small></button>`).join('')}</div>`;
   } catch(e){ res.innerHTML = '<p class="vacio" style="font-size:14px">No se pudo buscar. Revisá tu conexión y probá de nuevo.</p>'; }
@@ -893,7 +920,7 @@ function abrirHoja(itemId, opciones = {}){
   const mia = n ? n.notas[0] : null;
   H.aspectos = cat.aspectos;
   H.archivo = null; H.quitarFoto = false; H.fotoActual = x?.foto || null;
-  H.lat = x?.lat ?? null; H.lng = x?.lng ?? null; H.ubicTexto = x ? [x.nombre, x.lugar].filter(Boolean).join(', ') : ''; H.resultados = [];
+  H.lat = x?.lat ?? null; H.lng = x?.lng ?? null; H.aMano = false; H.ubicTexto = x ? [x.nombre, x.lugar].filter(Boolean).join(', ') : ''; H.resultados = [];
   H.pendiente = opciones.yaFuimos ? false : (x ? x.pendiente : S.vista === 'pend');
   H.nota = Math.round(mia?.puntaje ?? 8);
   H.asp = {}; H.aspectos.forEach(a => H.asp[a] = Math.round(mia?.aspectos?.[a] ?? mia?.puntaje ?? 8));
@@ -1214,10 +1241,11 @@ document.addEventListener('click', async e => {
   else if (a === 'yaFuimos') abrirHoja(id, {yaFuimos:true});
   else if (a === 'cerrar') cerrarHoja();
   else if (a === 'buscarUbic') ejecutarBusquedaUbic();
-  else if (a === 'elegirUbic'){ const r = H.resultados[Number(b.dataset.i)]; H.lat = r.lat; H.lng = r.lng;
-    if (!$('#fLugar').value.trim()){ const partes = r.direccion.split(',').map(t => t.trim()); $('#fLugar').value = partes[2] || partes[1] || ''; }
+  else if (a === 'elegirUbic'){ const r = H.resultados[Number(b.dataset.i)]; H.lat = r.lat; H.lng = r.lng; H.aMano = false;
+    if (!$('#fLugar').value.trim() && r.barrio) $('#fLugar').value = r.barrio;
     dibujarUbicacion(); }
-  else if (a === 'cambiarUbic' || a === 'quitarUbic'){ H.lat = null; H.lng = null; dibujarUbicacion(); if (a === 'cambiarUbic') setTimeout(() => $('#fUbic')?.focus(), 50); }
+  else if (a === 'marcarMano'){ const c = centroGrupo(); H.lat = c.lat; H.lng = c.lng; H.aMano = true; dibujarUbicacion(); }
+  else if (a === 'cambiarUbic' || a === 'quitarUbic'){ H.lat = null; H.lng = null; H.aMano = false; dibujarUbicacion(); if (a === 'cambiarUbic') setTimeout(() => $('#fUbic')?.focus(), 50); }
   else if (a === 'elegirFoto') $('#fFoto').click();
   else if (a === 'elegirAvatar') $('#fAvatar').click();
   else if (a === 'quitarAvatar'){ cerrarHoja(); await seguro(() => db.cambiarAvatar(null), 'Foto de perfil quitada'); }
